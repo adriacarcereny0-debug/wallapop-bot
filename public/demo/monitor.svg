@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 400 300" role="img" aria-label="Imagen de demostración">
+  <rect width="400" height="300" fill="oklch(0.94 0.006 70)"/>
+  <text x="200" y="145" text-anchor="middle" font-family="system-ui, sans-serif" font-size="15" fill="oklch(0.55 0.012 55)">Imagen de demostración</text>
+  <text x="200" y="168" text-anchor="middle" font-family="system-ui, sans-serif" font-size="12" fill="oklch(0.66 0.01 60)">monitor</text>
+</svg>

@@ -1,0 +1,65 @@
+generated: '2026-07-21'
+method: searched
+source: https://developers.wallapop.com/pages/guides/webhooks + openapi/wallapop-webhooks-openapi-original.yml
+spec_type: Webhooks
+description: >-
+  Wallapop Connect webhook event surface. Wallapop publishes no AsyncAPI
+  document; this catalog captures the documented webhook contract verbatim.
+  Webhooks are managed via the Webhooks Connect API
+  (openapi/wallapop-webhooks-openapi-original.yml).
+delivery:
+  method: HTTPS POST to the subscriber-registered URL
+  endpoint_requirements:
+    - Must accept POST requests
+    - Must return a 2xx status to confirm receipt
+  security:
+    signature_header: X-Wallapop-Signature
+    timestamp_header: X-Wallapop-Timestamp
+    scheme: >-
+      HMAC-SHA256 of "payload:timestamp" (JSON payload and epoch-milliseconds
+      timestamp concatenated with a colon) using the shared token returned at
+      webhook creation; timestamp changes every request to prevent replay.
+  payload_shape:
+    id: unique notification id (stable across retries)
+    type: event name
+    occurred_on: epoch milliseconds when the event occurred
+    data: event-specific object (e.g. item_id)
+events:
+  - name: SALE_COMPLETED
+    category: item
+  - name: ITEM_BANNED
+    category: item
+  - name: ITEM_OUT_OF_STOCK
+    category: item
+  - name: ITEM_INACTIVATED
+    category: item
+  - name: ITEM_LISTED
+    category: item
+  - name: ITEM_RETURNED
+    category: item
+  - name: DELIVERY_REQUEST_STARTED
+    category: delivery
+  - name: DELIVERY_REQUEST_CANCELLED
+    category: delivery
+  - name: DELIVERY_REQUEST_FAILED
+    category: delivery
+  - name: DELIVERY_REQUEST_EXPIRED
+    category: delivery
+  - name: TRANSACTION_CREATED
+    category: transaction
+  - name: DISPUTE_CREATED
+    category: dispute
+  - name: DISPUTE_QUALITY_CHECK_STARTED
+    category: dispute
+  - name: DISPUTE_QUALITY_CHECK_EXPIRED
+    category: dispute
+  - name: DISPUTE_QUALITY_CHECK_APPROVED_BY_SELLER
+    category: dispute
+  - name: DISPUTE_ISSUE_REPORTED_BY_SELLER
+    category: dispute
+  - name: DISPUTE_CANCELLED_BY_WALLAPOP
+    category: dispute
+  - name: CHAT_LEAD_CREATED
+    category: chat
+management_api: openapi/wallapop-webhooks-openapi-original.yml
+docs: https://developers.wallapop.com/pages/guides/webhooks

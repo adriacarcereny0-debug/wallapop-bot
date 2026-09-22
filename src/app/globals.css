@@ -1,0 +1,166 @@
+@import 'tailwindcss';
+
+/* ===========================================================================
+   Tokens — ver DESIGN.md
+   Estrategia: neutros entintados en cálido + un acento terracota (<10 %).
+   Todo en OKLCH. Sin #000 ni #fff.
+   =========================================================================== */
+
+@theme {
+  --color-bg: oklch(0.985 0.004 70);
+  --color-surface: oklch(0.999 0.002 70);
+  --color-surface-sunken: oklch(0.965 0.005 70);
+  --color-ink: oklch(0.24 0.012 55);
+  --color-muted: oklch(0.52 0.012 55);
+  --color-faint: oklch(0.66 0.01 60);
+  --color-line: oklch(0.9 0.006 65);
+  --color-line-strong: oklch(0.84 0.008 65);
+
+  --color-accent: oklch(0.52 0.132 42);
+  --color-accent-hover: oklch(0.46 0.132 42);
+  --color-accent-soft: oklch(0.955 0.018 45);
+  --color-on-accent: oklch(0.99 0.004 70);
+
+  --color-success: oklch(0.52 0.1 150);
+  --color-success-soft: oklch(0.955 0.03 150);
+  --color-warning: oklch(0.58 0.11 72);
+  --color-warning-soft: oklch(0.96 0.04 78);
+  --color-danger: oklch(0.53 0.16 25);
+  --color-danger-soft: oklch(0.96 0.03 25);
+  --color-info: oklch(0.52 0.08 240);
+  --color-info-soft: oklch(0.96 0.02 240);
+
+  --text-2xs: 0.75rem;
+  --text-xs: 0.8125rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.75rem;
+  --text-3xl: 2.25rem;
+
+  --font-sans:
+    ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto, 'Helvetica Neue', Arial,
+    sans-serif;
+
+  --ease-out-quart: cubic-bezier(0.25, 1, 0.5, 1);
+}
+
+/* Modo oscuro. Se activa por preferencia del sistema o por data-theme. */
+@custom-variant dark (&:where([data-theme='dark'], [data-theme='dark'] *));
+
+:root {
+  color-scheme: light;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --color-bg: oklch(0.165 0.008 60);
+    --color-surface: oklch(0.205 0.009 60);
+    --color-surface-sunken: oklch(0.185 0.008 60);
+    --color-ink: oklch(0.94 0.006 70);
+    --color-muted: oklch(0.7 0.008 65);
+    --color-faint: oklch(0.56 0.008 62);
+    --color-line: oklch(0.28 0.01 60);
+    --color-line-strong: oklch(0.36 0.012 60);
+    --color-accent: oklch(0.68 0.125 45);
+    --color-accent-hover: oklch(0.74 0.125 45);
+    --color-accent-soft: oklch(0.27 0.035 42);
+    --color-on-accent: oklch(0.17 0.01 45);
+    --color-success: oklch(0.72 0.11 150);
+    --color-success-soft: oklch(0.26 0.03 150);
+    --color-warning: oklch(0.78 0.12 78);
+    --color-warning-soft: oklch(0.28 0.035 78);
+    --color-danger: oklch(0.68 0.15 25);
+    --color-danger-soft: oklch(0.27 0.04 25);
+    --color-info: oklch(0.7 0.09 240);
+    --color-info-soft: oklch(0.26 0.03 240);
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --color-bg: oklch(0.165 0.008 60);
+  --color-surface: oklch(0.205 0.009 60);
+  --color-surface-sunken: oklch(0.185 0.008 60);
+  --color-ink: oklch(0.94 0.006 70);
+  --color-muted: oklch(0.7 0.008 65);
+  --color-faint: oklch(0.56 0.008 62);
+  --color-line: oklch(0.28 0.01 60);
+  --color-line-strong: oklch(0.36 0.012 60);
+  --color-accent: oklch(0.68 0.125 45);
+  --color-accent-hover: oklch(0.74 0.125 45);
+  --color-accent-soft: oklch(0.27 0.035 42);
+  --color-on-accent: oklch(0.17 0.01 45);
+  --color-success: oklch(0.72 0.11 150);
+  --color-success-soft: oklch(0.26 0.03 150);
+  --color-warning: oklch(0.78 0.12 78);
+  --color-warning-soft: oklch(0.28 0.035 78);
+  --color-danger: oklch(0.68 0.15 25);
+  --color-danger-soft: oklch(0.27 0.04 25);
+  --color-info: oklch(0.7 0.09 240);
+  --color-info-soft: oklch(0.26 0.03 240);
+}
+
+* {
+  border-color: var(--color-line);
+}
+
+body {
+  background-color: var(--color-bg);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+/* Los números se alinean en columna: imprescindible en tablas de precios. */
+.tnum {
+  font-variant-numeric: tabular-nums;
+}
+
+/* Foco visible y coherente en toda la aplicación. */
+:where(a, button, input, select, textarea, [tabindex]):focus-visible {
+  outline: 2px solid var(--color-accent);
+  outline-offset: 2px;
+  border-radius: 4px;
+}
+
+@keyframes shimmer {
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.skeleton {
+  position: relative;
+  overflow: hidden;
+  background-color: var(--color-surface-sunken);
+}
+
+.skeleton::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background-image: linear-gradient(
+    90deg,
+    transparent,
+    color-mix(in oklch, var(--color-line) 55%, transparent),
+    transparent
+  );
+  animation: shimmer 1.6s infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+  }
+  .skeleton::after {
+    display: none;
+  }
+}

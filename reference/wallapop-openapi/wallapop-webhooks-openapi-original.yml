@@ -1,0 +1,284 @@
+openapi: 3.0.1
+info:
+  title: Webhooks Connect API
+  description: >
+    API for managing webhooks to subscribe to specific events related to items
+    in Wallapop.
+  version: 0.0.1
+servers:
+  - url: https://connect.wallapop.com
+    description: Production
+security:
+  - oAuthWithPKCE: []
+tags:
+  - name: Webhooks
+    description: Webhooks allow you to receive event notifications.
+paths:
+  /webhooks:
+    post:
+      summary: Create a new webhook
+      tags:
+        - Webhooks
+      description: >-
+        Register a new webhook for the authenticated user, allowing you to
+        receive event notifications.
+      operationId: createWebhook
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      responses:
+        '200':
+          description: The webhook was created successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateWebhookResponse'
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - Webhooks
+      summary: Retrieve webhooks
+      description: Retrieves a list of your webhooks.
+      operationId: findMyWebhooks
+      responses:
+        '200':
+          description: The list of webhooks was successfully retrieved.
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/FindWebhookResponse'
+  /webhooks/{webhookId}:
+    put:
+      summary: Update a webhook
+      tags:
+        - Webhooks
+      description: >-
+        You can modify the webhook definition by updating the endpoint `url` and
+        the list of `events` to which the webhook is subscribed.
+      operationId: updateWebhook
+      parameters:
+        - name: webhookId
+          in: path
+          description: The webhook ID.
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookIdPathParameter'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/WebhookRequest'
+      responses:
+        '204':
+          description: >-
+            The webhook was successfully updated. There is no content to
+            display.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found. A resource with the specified ID does not exist.
+    delete:
+      summary: Delete a webhook
+      tags:
+        - Webhooks
+      description: Delete a webhook by providing its `id`.
+      operationId: deleteWebhook
+      parameters:
+        - name: webhookId
+          description: The webhook ID.
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookIdPathParameter'
+      responses:
+        '204':
+          description: The webhook was deleted successfully.
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found. A resource with the specified ID does not exist.
+  /webhooks/{webhookId}/token:
+    patch:
+      summary: Update a webhook token
+      tags:
+        - Webhooks
+      description: Update the webhook signing token to enhance security.
+      operationId: updateWebhookToken
+      parameters:
+        - name: webhookId
+          in: path
+          description: The webhook ID.
+          required: true
+          schema:
+            $ref: '#/components/schemas/WebhookIdPathParameter'
+      responses:
+        '200':
+          description: The webhook token was updated successfully.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/WebhookTokenUpdatedResponse'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found. A resource with the specified ID does not exist.
+components:
+  securitySchemes:
+    oAuthWithPKCE:
+      type: oauth2
+      description: >-
+        The Webhooks Connect API utilizes the OAuth 2.0 Authorization Code flow
+        with Proof Key for Code Exchange (PKCE) for secure authentication and
+        token exchange.
+      flows:
+        authorizationCode:
+          authorizationUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/auth
+          tokenUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          refreshUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          scopes: {}
+  schemas:
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      description: Detailed information about the error encountered.
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_BODY_REQUEST
+            - USER_UNAUTHORIZED
+          description: A standardized error descriptor.
+          example: INVALID_BODY_REQUEST
+        message:
+          description: A detailed error message.
+          type: string
+    EventType:
+      type: string
+      description: >
+        Item events that can be subscribed to via webhooks. These events trigger
+        notifications to the webhook when they occur.
+      enum:
+        - SALE_COMPLETED
+        - ITEM_BANNED
+        - ITEM_OUT_OF_STOCK
+        - ITEM_INACTIVATED
+        - ITEM_LISTED
+        - ITEM_RETURNED
+        - DELIVERY_REQUEST_STARTED
+        - DELIVERY_REQUEST_CANCELLED
+        - DELIVERY_REQUEST_FAILED
+        - DELIVERY_REQUEST_EXPIRED
+        - TRANSACTION_CREATED
+        - DISPUTE_CREATED
+        - DISPUTE_QUALITY_CHECK_STARTED
+        - DISPUTE_QUALITY_CHECK_EXPIRED
+        - DISPUTE_QUALITY_CHECK_APPROVED_BY_SELLER
+        - DISPUTE_ISSUE_REPORTED_BY_SELLER
+        - DISPUTE_CANCELLED_BY_WALLAPOP
+        - CHAT_LEAD_CREATED
+      example: SALE_COMPLETED
+    WebhookUrl:
+      type: string
+      description: >
+        The URL where webhook notifications will be sent. This endpoint must
+        accept POST requests and handle incoming event notifications securely.
+        It should validate HMAC signatures, return a `2xx` HTTP status code upon
+        successful receipt, and process event payloads accordingly.
+    WebhookToken:
+      type: string
+      description: >
+        A secure HMAC token linked to the webhook, used to sign requests sent to
+        the webhook URL. This token must be used to verify the authenticity and
+        integrity of incoming webhook requests.
+      example: KVXQK63TysQsPgjUQiA8nEVN9Og5bGm5AnFGdecuOks175l894ogW3qFsfAQYIfq
+    WebhookIdPathParameter:
+      type: string
+      description: The ID of the webhook.
+      example: 5d5ae7a4-2d0d-4be1-a5da-b49e3291e5cd
+    WebhookRequest:
+      type: object
+      required:
+        - url
+        - events
+      properties:
+        url:
+          $ref: '#/components/schemas/WebhookUrl'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'
+    CreateWebhookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the newly created webhook.
+        token:
+          $ref: '#/components/schemas/WebhookToken'
+    WebhookTokenUpdatedResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the updated webhook.
+        token:
+          $ref: '#/components/schemas/WebhookToken'
+    FindWebhookResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier of the webhook.
+          example: a1234b567c890
+        url:
+          $ref: '#/components/schemas/WebhookUrl'
+        token:
+          $ref: '#/components/schemas/WebhookToken'
+        events:
+          type: array
+          items:
+            $ref: '#/components/schemas/EventType'

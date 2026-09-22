@@ -1,0 +1,969 @@
+openapi: 3.0.1
+info:
+  title: Transactions Connect API
+  description: >
+    The Transactions Connect API allows sellers to view and accept shipping
+    requests, which initiates the shipping transaction. You can then track the
+    transaction status until the buyer receives the item.
+  version: 0.0.1
+servers:
+  - url: https://connect.wallapop.com
+    description: Production
+security:
+  - oAuthWithPKCE: []
+tags:
+  - name: Transactions
+    description: >-
+      A shipping transaction is initiated when a seller accepts a shipping
+      request.
+paths:
+  /transactions/requests/pending:
+    get:
+      tags:
+        - Transactions
+      summary: Retrieve pending shipping requests
+      description: >-
+        Returns a list of pending shipping requests awaiting the seller's
+        acceptance. When a buyer purchases an item, a pending shipping request
+        is generated. A request remains pending until the seller accepts it.
+      operationId: sellerPendingRequests
+      responses:
+        '200':
+          description: Successfully retrieved a list of pending shipping requests.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingRequestsResponse'
+  /transactions/requests/{requestId}:
+    get:
+      tags:
+        - Transactions
+      summary: Retrieve a shipping request
+      description: Obtain the details of a specific shipping request by providing its ID.
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The shipping request ID.
+      operationId: sellerRequest
+      responses:
+        '200':
+          description: The shipping request was successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/FindRequestResponse'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /transactions/requests/{requestId}/accept/home-pickup:
+    post:
+      summary: Accept a shipping request with home pickup
+      operationId: acceptHomePickup
+      tags:
+        - Transactions
+      description: >
+        Accept a shipping request with home pickup, where the carrier collects
+        the package directly from the seller's shipping address. The client app
+        must generate and pass a `transaction_id`.
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The shipping request ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellerAcceptRequestRestRequest'
+      responses:
+        '202':
+          description: >-
+            The shipping request was successfully accepted for home pickup.
+            There is no content to display.
+        '409':
+          description: >-
+            Conflict. There is a conflict with the current state of the
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /transactions/requests/{requestId}/accept/post-office:
+    post:
+      summary: Accept a shipping request with post office drop off
+      tags:
+        - Transactions
+      description: >
+        Accept a shipping request for post office drop-off, where the seller
+        delivers the package to a designated post office. The client app must
+        generate and pass a `transaction_id`.
+      parameters:
+        - in: path
+          name: requestId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The shipping request ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/SellerAcceptRequestRestRequest'
+      responses:
+        '202':
+          description: >-
+            The shipping request was successfully accepted for post office drop
+            off.
+        '409':
+          description: >-
+            Conflict. There is a conflict with the current state of the
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /transactions/pending:
+    get:
+      tags:
+        - Transactions
+      summary: Retrieve pending shipping transactions
+      description: >
+        Returns a list of pending shipping transactions. A shipping transaction
+        is created when the seller accepts the corresponding shipping request. A
+        pending transaction is one that has not been accepted, failed, rejected,
+        cancelled, or requires payment.
+      operationId: sellerPendingTransactions
+      responses:
+        '200':
+          description: Successfully retrieved pending shipping transactions.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PendingTransactionsResponse'
+  /transactions/{transactionId}:
+    get:
+      tags:
+        - Transactions
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The transaction ID.
+      summary: Retrieve a shipping transaction
+      description: >-
+        Obtain the details of a specific shipping transaction by providing its
+        ID.
+      operationId: sellerTransaction
+      responses:
+        '200':
+          description: Successfully retrieved the shipping transaction.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TransactionResponse'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /transactions/{transactionId}/delivery/register:
+    post:
+      summary: Register a delivery for a transaction
+      operationId: registerDelivery
+      tags:
+        - Transactions
+      description: >
+        Registers a delivery for a transaction with `transaction_id`. Seller
+        needs to register the delivery when the package is registered into their
+        carrier of choice.
+      parameters:
+        - in: path
+          name: transactionId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The transaction ID.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RegisterDeliveryRequest'
+      responses:
+        '201':
+          description: Delivery was registered successfully.
+        '400':
+          description: Bad request. Request is not properly structured.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: >-
+            Conflict. There is a conflict with the current state of the
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /disputes/{disputeId}:
+    get:
+      tags:
+        - Disputes
+      parameters:
+        - in: path
+          name: disputeId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: The dispute ID.
+      summary: Retrieve dispute details
+      description: Obtain the details of a specific dispute by providing its ID.
+      operationId: findDispute
+      responses:
+        '200':
+          description: Successfully retrieved the dispute details.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ConnectDisputeRestResponse'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /deliveries/{deliveryId}/status:
+    patch:
+      tags:
+        - Delivery
+      parameters:
+        - in: path
+          name: deliveryId
+          required: true
+          schema:
+            type: string
+            format: uuid
+          description: Delivery ID
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDeliveryStatusRequest'
+      summary: Update a tracking status for a delivery.
+      description: Perform an update to a delivery's tracking status.
+      operationId: updateDeliveryStatus
+      responses:
+        '204':
+          description: Successfully updated the delivery status.
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: >-
+            Conflict. There is a conflict with the current state of the
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+components:
+  securitySchemes:
+    oAuthWithPKCE:
+      type: oauth2
+      description: >-
+        The Transactions Connect API uses OAuth 2.0 Authorization Code flow with
+        a Proof Key for Code Exchange.
+      flows:
+        authorizationCode:
+          authorizationUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/auth
+          tokenUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          refreshUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          scopes: {}
+  schemas:
+    PendingRequestsResponse:
+      type: object
+      properties:
+        requests:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingRequestResponse'
+    FindRequestResponse:
+      description: >-
+        A shipping request is generated when a buyer purchases an item,
+        including the cost of the item, service fees, and delivery charges.
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the shipping request.
+          example: bf44bd9c-b9fc-4e63-ba48-78539979738a
+        item_ids:
+          type: array
+          description: >-
+            The list contains items selected by the buyer, with each item
+            identified by its unique ID.
+          items:
+            type: string
+          example:
+            - 3e9wzv7zlmdr
+            - abc123xyz
+            - another-id
+        seller_revenue:
+          $ref: '#/components/schemas/SellerRevenue'
+        buyer_cost:
+          $ref: '#/components/schemas/BuyerCost'
+        buyer_information:
+          $ref: '#/components/schemas/BuyerInformation'
+        buyer_user_id:
+          type: string
+          description: >-
+            A unique identifier generated by Wallapop to identify the buyer for
+            this specific shipping request.
+          example: v9owzy2j5g7x
+        carrier_drop_off_options:
+          $ref: '#/components/schemas/PendingRequestCarrierDropOffOptions'
+        status:
+          type: string
+          description: >-
+            The transaction status can be accepted, pending, failed, rejected,
+            cancelled, cancelled by the buyer, expired, or requires payment.
+          example: pending
+    PendingTransactionsResponse:
+      type: object
+      properties:
+        transactions:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingTransactionResponse'
+    PendingRequestResponse:
+      description: A pending shipping request that has not be accepted by the seller yet.
+      type: object
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the shipping request.
+          example: bf44bd9c-b9fc-4e63-ba48-78539979738a
+        item_id:
+          type: string
+          description: An individual item from the shipping request.
+          example: 3e9wzv7zlmdr
+          deprecated: true
+        item_ids:
+          type: array
+          description: The items from the shipping request.
+          items:
+            type: string
+          example:
+            - 3e9wzv7zlmdr
+            - abc123xyz
+            - another-id
+        seller_revenue:
+          $ref: '#/components/schemas/SellerRevenue'
+        buyer_cost:
+          $ref: '#/components/schemas/BuyerCost'
+        buyer_information:
+          $ref: '#/components/schemas/BuyerInformation'
+        buyer_user_id:
+          type: string
+          description: >-
+            A unique identifier generated by Wallapop to identify the buyer for
+            this specific shipping request.
+          example: v9owzy2j5g7x
+        carrier_drop_off_options:
+          $ref: '#/components/schemas/PendingRequestCarrierDropOffOptions'
+    ConnectDisputeRestResponse:
+      type: object
+      description: Dispute details for a transaction, including evidence and status.
+      properties:
+        id:
+          type: string
+          description: The unique identifier for the dispute.
+          example: bf44bd9c-b9fc-4e63-ba48-78539979738a
+        created_at:
+          type: string
+          format: date-time
+          description: The date and time when the dispute was created.
+          example: '2024-06-10T12:34:56Z'
+        description:
+          type: string
+          description: The description provided for the dispute.
+          example: Item arrived damaged.
+        transaction_id:
+          type: string
+          description: The unique identifier of the related transaction.
+          example: 3e9wzv7zlmdr
+        status:
+          type: string
+          description: The current status of the dispute.
+          example: pending
+        photos:
+          type: array
+          description: List of photo evidences attached to the dispute.
+          items:
+            $ref: '#/components/schemas/ConnectDisputeEvidence'
+        videos:
+          type: array
+          description: List of video evidences attached to the dispute.
+          items:
+            $ref: '#/components/schemas/ConnectDisputeEvidence'
+        escalated_reason:
+          type: string
+          nullable: true
+          description: The reason why the dispute was escalated, if applicable.
+          example: Broken item.
+        reject_reason:
+          type: string
+          nullable: true
+          description: The reason why the dispute was rejected, if applicable.
+          example: Evidence insufficient.
+        type:
+          type: string
+          nullable: true
+          description: The type of dispute solution, such as refund or repair.
+          enum:
+            - refund
+            - repair
+          example: refund
+        check_deadline:
+          type: string
+          format: date-time
+          nullable: true
+          description: The deadline for quality check, if applicable.
+          example: '2024-06-15T23:59:59Z'
+    PendingRequestCarrierDropOffOptions:
+      type: object
+      required:
+        - options
+      properties:
+        options:
+          type: array
+          items:
+            $ref: '#/components/schemas/PendingRequestCarrierDropOffOption'
+    PendingRequestCarrierDropOffOption:
+      type: object
+      properties:
+        drop_off_mode:
+          type: string
+          description: >-
+            The method by which the carrier will receive the item either through
+            the seller's drop-off at the post office or a pickup from the
+            seller's home. The `drop_off_mode` is selected either by the buyer
+            or Wallapop rules.
+          enum:
+            - post office
+            - home pickup
+          example: post office
+        carrier:
+          type: string
+          description: >-
+            The company or service responsible for transporting and delivering
+            packages from the seller to the buyer. Examples include Correos,
+            Seur, InPost and other shipping providers. The carrier is selected
+            either the buyer or Wallapop rules.
+          nullable: true
+          example: Seur
+        carrier_drop_off_cost:
+          description: A cost charged to the seller based on the selected `drop-off_mode`.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+    SellerAcceptRequestRestRequest:
+      type: object
+      required:
+        - transaction_id
+      properties:
+        transaction_id:
+          type: string
+          example: a1b2c3d4-e5f6-1234-5678-90abcdef1234
+          format: uuid
+          description: >-
+            The unique identifier of the new transaction generated by the API
+            client.
+    TransactionResponse:
+      description: >-
+        A shipping transaction, which may be in any state (pending, delivered,
+        cancelled, etc.).
+      type: object
+      properties:
+        id:
+          type: string
+          description: The transaction ID.
+          example: 6ea1b3ec-7ac2-40c5-9ed0-d315b2f5f5bd
+        request_id:
+          description: The ID of the shipping request associated with this transaction.
+          type: string
+          example: bf44bd9c-b9fc-4e63-ba48-78539979738a
+        item_ids:
+          type: array
+          description: >-
+            The list of item IDs from the shipping request associated with the
+            transaction.
+          items:
+            type: string
+          example:
+            - 3e9wzv7zlmdr
+            - abc123xyz
+            - another-id
+        seller_revenue:
+          $ref: '#/components/schemas/SellerRevenue'
+        buyer_cost:
+          $ref: '#/components/schemas/BuyerCost'
+        buyer_user_id:
+          type: string
+          description: >-
+            A unique identifier generated by Wallapop to identify the buyer for
+            the shipping request associated with this transaction.
+          example: v9owzy2j5g7x
+        delivery_status:
+          type: string
+          example: delivered
+          description: >
+            The transaction status. The possible statuses are the same as in
+            PendingTransactionResponse.
+          enum:
+            - pending registration
+            - pending delivery to carrier
+            - attempt pickup failed
+            - deposited at pudo
+            - delivered to carrier
+            - on hold at carrier
+            - on hold instructions received
+            - in transit
+            - out for delivery
+            - attempt delivery failed
+            - delivered
+            - lost
+            - expired
+            - returned
+            - unknown
+            - failed
+            - cancelled
+            - cancelled by seller
+            - available for the recipient
+        carrier_drop_off_mode:
+          type: string
+          description: >-
+            The method by which the carrier will receive the item either through
+            the seller's drop-off at the post office or a pickup from the
+            seller's home.
+          enum:
+            - post office
+            - home pickup
+        carrier:
+          type: string
+          description: >
+            The company or service responsible for transporting and delivering
+            packages from the seller to the buyer. Examples include Correos,
+            Seur, InPost, External if carrier agnostic, and other shipping
+            providers.
+          nullable: true
+          example: Seur
+        carrier_tracking_code:
+          type: string
+          description: The shipment tracking code generated by the carrier.
+          nullable: true
+          example: SEURESITM1S8DWA
+        delivery_label_url:
+          type: string
+          description: The shipping label URL.
+          example: >-
+            https://delivery-labels-test.wallapop.com/a98f3a24-afb2-40d9-a0b6-5285224794fb.jpg
+          nullable: true
+        delivery_id:
+          type: string
+          description: The delivery id, set when the transaction is linked to a delivery.
+          example: ffbb8752-bde8-40e4-ba59-bf6354f7edff
+          nullable: true
+        buyer_information:
+          $ref: '#/components/schemas/BuyerInformation'
+    PendingTransactionResponse:
+      description: >-
+        A pending shipping transaction that has neither reached a final state
+        nor been canceled or expired.
+      type: object
+      properties:
+        id:
+          type: string
+          description: The transaction ID.
+          example: 6ea1b3ec-7ac2-40c5-9ed0-d315b2f5f5bd
+        request_id:
+          description: The ID of the shipping request associated with this transaction.
+          type: string
+          example: bf44bd9c-b9fc-4e63-ba48-78539979738a
+        item_id:
+          type: string
+          description: >-
+            An individual item from the shipping request associated with the
+            transaction.
+          example: 3e9wzv7zlmdr
+          deprecated: true
+        item_ids:
+          type: array
+          description: The items from the shipping request associated with the transaction.
+          items:
+            type: string
+          example:
+            - 3e9wzv7zlmdr
+            - abc123xyz
+            - another-id
+        seller_revenue:
+          $ref: '#/components/schemas/SellerRevenue'
+        buyer_cost:
+          $ref: '#/components/schemas/BuyerCost'
+        buyer_user_id:
+          type: string
+          description: >-
+            A unique identifier generated by Wallapop to identify the buyer for
+            the shipping request associated with this transaction.
+          example: v9owzy2j5g7x
+        delivery_status:
+          type: string
+          example: delivered
+          description: |
+            The transaction status. The possible statuses are:
+              - `pending registration`: The transaction has been created in Wallapop's system, but we are awaiting registration with the carrier. There is a slight delay, and the status will display as "pending registration."
+              - `pending delivery to carrier`: The sender has prepared the package, but it has not yet been dropped off.
+              - `attempt pickup failed`: The carrier attempted to pick up the package but was unable to do so due to various reasons, such as the package not being available, an incorrect pickup address, or the business being closed.
+              - `deposited at pudo`: The sender has dropped off the package at a Pick Up Drop Off (PUDO) location for shipment.
+              - `delivered to carrier`: The post office has accepted the package and handed it over for processing and transit.
+              - `on hold at carrier`: The package is temporarily on hold with the postal service due to an issue, such as an address problem or a recipient request.
+              - `on hold instructions received`: Additional instructions regarding the package’s status have been received.
+              - `in transit`: The package is moving through the postal network toward the recipient’s local post office.
+              - `out for delivery`: The package is on the final delivery route to the recipient’s home.
+              - `attempt delivery failed`: The carrier attempted to deliver the package to the home but was unsuccessful, possibly due to the recipient being unavailable or an incorrect address.
+              - `delivered`: The recipient has successfully picked up the package from the post office or received it at home.
+              - `lost`: This status is typically updated manually by the customer after an investigation with the carrier.
+              - `expired`: The seller has not dropped off the package with the carrier within the required five-day period, resulting in no package being returned.
+              - `returned`: The package has been sent back to the sender due to non-collection or another issue.
+              - `unknown`: The status of the package is currently unknown.
+              - `failed`: This status indicates that the carrier has sent us a status we are not mapping, requiring manual intervention on our part.
+              - `cancelled:` The cancellation has been manually processed internally.
+              - `cancelled by seller`: The seller has cancelled the transaction.
+              - `available for the recipient`: Indicates that the package is ready for pickup at the post office when post office pickup has been selected.
+          enum:
+            - pending registration
+            - pending delivery to carrier
+            - attempt pickup failed
+            - deposited at pudo
+            - delivered to carrier
+            - on hold at carrier
+            - on hold instructions received
+            - in transit
+            - out for delivery
+            - attempt delivery failed
+            - delivered
+            - lost
+            - expired
+            - returned
+            - unknown
+            - failed
+            - cancelled
+            - cancelled by seller
+            - available for the recipient
+        carrier_drop_off_mode:
+          type: string
+          description: >-
+            The method by which the carrier will receive the item either through
+            the seller's drop-off at the post office or a pickup from the
+            seller's home. The `drop_off_mode` is selected either by the buyer
+            or Wallapop rules.
+          enum:
+            - post office
+            - home pickup
+        carrier:
+          type: string
+          description: >
+            The company or service responsible for transporting and delivering
+            packages from the seller to the buyer. Examples include Correos,
+            Seur, InPost and other shipping providers. The carrier is selected
+            either the buyer or Wallapop rules.
+          nullable: true
+          example: Seur
+        carrier_tracking_code:
+          type: string
+          description: The shipment tracking code generated by the carrier.
+          nullable: true
+          example: SEURESITM1S8DWA
+        delivery_label_url:
+          type: string
+          description: The shipping label URL.
+          example: >-
+            https://delivery-labels-test.wallapop.com/a98f3a24-afb2-40d9-a0b6-5285224794fb.jpg
+          nullable: true
+        delivery_id:
+          type: string
+          description: The delivery id, set when the transaction is linked to a delivery.
+          example: ffbb8752-bde8-40e4-ba59-bf6354f7edff
+          nullable: true
+        buyer_information:
+          $ref: '#/components/schemas/BuyerInformation'
+    SellerRevenue:
+      type: object
+      description: |
+        A detailed breakdown of the seller's revenue.
+      properties:
+        item_price:
+          description: The price at which the item was sold.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        delivery_cost:
+          description: The cost of delivering the item to the buyer.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        fees_cost:
+          description: Fees deducted by the platform for the transaction.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        total:
+          description: The final amount the seller will receive.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+    BuyerCost:
+      type: object
+      description: |
+        A detailed breakdown of the buyer's cost
+      properties:
+        item_price:
+          description: The price at which the item was sold.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        delivery_cost:
+          description: The cost of delivering the item to the buyer.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        fees_cost:
+          description: Fees deducted by the platform for the transaction.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+        total:
+          description: The final amount the buyer will pay.
+          properties:
+            amount:
+              $ref: '#/components/schemas/Amount'
+            currency:
+              $ref: '#/components/schemas/Currency'
+    BuyerInformation:
+      nullable: true
+      type: object
+      description: >-
+        Information about the buyer's information associated with the shipping
+        request or transaction. If you want to manage logistics, you can contact
+        commercial team to get access to this information.
+      properties:
+        name:
+          type: string
+          description: The full name of the buyer.
+          example: John Doe
+        street:
+          type: string
+          description: The street address of the buyer.
+          example: 123 Main St
+        postal_code:
+          type: string
+          description: The postal code of the buyer's address.
+          example: 8001
+        city:
+          type: string
+          description: The city of the buyer's address.
+          example: Barcelona
+        region:
+          type: string
+          description: The region or state of the buyer's address.
+          example: Catalonia
+        country:
+          type: string
+          description: The country of the buyer's address.
+          example: ES
+        phone_number:
+          type: string
+          description: The phone number of the buyer.
+          example: '+34612345678'
+    ConnectDisputeEvidence:
+      type: object
+      description: >-
+        Evidence attached to a dispute, such as a photo or video, including a
+        thumbnail.
+      properties:
+        url:
+          type: string
+          format: uri
+          description: The URL where the evidence file can be accessed.
+          example: https://cdn.wallapop.com/evidence/photo1.jpg
+        thumbnail_url:
+          type: string
+          format: uri
+          description: The URL for the thumbnail version of the evidence.
+          example: https://cdn.wallapop.com/evidence/photo1-thumb.jpg
+    Amount:
+      type: number
+      description: The amount in the specified currency.
+      format: float
+      example: 300.89
+    Currency:
+      type: string
+      description: >-
+        The currency code associated with the amount. The only supported
+        currency is `EUR`.
+      example: EUR
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      description: Detailed information about the error encountered.
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_ACCEPT_REQUEST
+            - USER_UNAUTHORIZED
+            - NOT_FOUND
+            - ONGOING_DELIVERY
+            - USER_IS_NOT_THE_SELLER
+            - INVALID_REGISTER_REQUEST
+            - ERROR_UPDATING_DELIVERY_STATUS
+          description: A standardized error descriptor.
+          example: INVALID_ACCEPT_REQUEST
+        message:
+          description: A detailed error message.
+          type: string
+          example: >-
+            Request `1a24c9e4-32c9-44ea-8f63-9e4f2ba54725` status is not
+            `PENDING`. It is `ACCEPTED`.
+    RegisterDeliveryRequest:
+      type: object
+      description: Needed information to register the delivery.
+      properties:
+        shipment_to_buyer:
+          type: object
+          nullable: true
+          description: >-
+            Contains all necessary information for a delivery from seller to
+            buyer.
+          properties:
+            tracking_code:
+              type: string
+              description: Tracking code from the carrier.
+            tracking_url:
+              type: string
+              description: URL from the carrier to track the package's status.
+        shipment_to_seller:
+          type: object
+          nullable: true
+          description: >-
+            Contains all necessary information for a delivery from buyer to
+            seller.
+          properties:
+            tracking_code:
+              type: string
+              description: Tracking code from the carrier.
+            tracking_url:
+              type: string
+              description: URL from the carrier to track the package's status.
+            label_url:
+              type: string
+              description: URL of the shipping label.
+            label_file_type:
+              type: string
+              enum:
+                - PNG
+                - PDF
+                - JPG
+                - GIF
+              description: File type of the label
+            label_type:
+              type: string
+              enum:
+                - BARCODE
+                - PRINTABLE
+                - PAPERLESS
+              description: Type of the provided label.
+    UpdateDeliveryStatusRequest:
+      type: object
+      description: Needed information to update a delivery tracking status.
+      properties:
+        status:
+          type: string
+          enum:
+            - DELIVERED_TO_CARRIER
+            - IN_TRANSIT
+            - DELIVERED
+            - FAILED
+            - CANCELLED
+          description: Status to which update the delivery to.

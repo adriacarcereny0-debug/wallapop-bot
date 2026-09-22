@@ -1,0 +1,1354 @@
+openapi: 3.0.1
+info:
+  title: Items Connect API
+  description: >
+    The Items Connect API streamlines the listing process by allowing sellers to
+    programmatically post items for sale, offering an efficient alternative to
+    creating individual item listings through the user interface.
+  version: 0.0.1
+servers:
+  - url: https://connect.wallapop.com
+    description: Production
+security:
+  - oAuthWithPKCE: []
+tags:
+  - name: Items
+    description: >-
+      An item refers to a listing created by a user on the Wallapop marketplace,
+      indicating their intent to sell. These items can include a diverse range
+      of products.
+  - name: Categories
+    description: >-
+      A category is a classification for product listings, with specific
+      attributes and constraints that products within the category must adhere
+      to.
+paths:
+  /items:
+    post:
+      tags:
+        - Items
+      summary: Create and publish an item
+      description: Create and publish an item for sale in Wallapop.
+      operationId: createItem
+      parameters:
+        - name: Accept-Language
+          in: header
+          required: false
+          schema:
+            type: string
+          description: >-
+            The text fields for the item, such as the description and title, are
+            written in a specific language.
+          example: es
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateItemRequest'
+      responses:
+        '201':
+          description: The item was successfully created and published.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    description: The ID of the newly created item.
+                    example: 4z4g109xo8zy
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+    get:
+      tags:
+        - Items
+      summary: List items for sale
+      description: >-
+        Provides a list of items you have published for sale and that are
+        available for buyers on Wallapop.
+      operationId: userItems
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+          description: >-
+            If there is a previous request, include the "next" pagination token
+            from the response's metadata.
+          example: SSMxODk2ODUyODFfRF9VIzc0ODIxMDMzX1AjMjAyMS0wNS0yNVQxNDoxMDoyM1o
+      responses:
+        '200':
+          description: The list of items was successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserItemsResponse'
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+        '401':
+          description: >-
+            Unauthorized. The request lacks authentication credentials or the
+            provided credentials are invalid.
+  /items/{itemId}:
+    get:
+      tags:
+        - Items
+      summary: Retrieve item details
+      description: Retrieves details about an item that you have for sale.
+      operationId: getItem
+      parameters:
+        - name: itemId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The item ID.
+          example: xpzpvny244z3
+      responses:
+        '200':
+          description: The information about the item has been successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ItemDetailResponse'
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+    put:
+      tags:
+        - Items
+      summary: Update an item
+      description: Update one of your items.
+      operationId: updateItem
+      parameters:
+        - name: itemId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The item ID.
+          example: xpzpvny244z3
+        - name: Accept-Language
+          in: header
+          required: false
+          schema:
+            type: string
+          description: >-
+            The text fields for the item, such as the description and title, are
+            written in a specific language.
+          example: es
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateItemRequest'
+      responses:
+        '204':
+          description: >-
+            No Content. The resource was successfully updated and there is no
+            content to display.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not found. A resource with the specified ID does not exist.
+        '409':
+          description: There is a concurrent modification conflict.
+    delete:
+      tags:
+        - Items
+      summary: Delete an item
+      description: Delete a specific item by providing its ID.
+      operationId: deleteItem
+      parameters:
+        - name: itemId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The item ID.
+          example: xpzpvny244z3
+      responses:
+        '204':
+          description: >-
+            No Content. The resource was successfully deleted and there is no
+            content to display.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/{itemId}/images:
+    post:
+      tags:
+        - Items
+      summary: Add a image to an item
+      description: >-
+        Add an additional image to the Wallapop item page. You can also arrange
+        the display order of these images.
+      operationId: addItemImage
+      parameters:
+        - name: itemId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The ID of the item.
+          example: xpzpvny244z3
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddItemImageRequest'
+      responses:
+        '201':
+          description: The image was successfully added to the item.
+          content:
+            application/json:
+              schema:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    description: The image ID.
+                    example: 0j2rmkq7vr6y
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '409':
+          description: There is a concurrent modification conflict.
+  /items/{itemId}/images/{imageId}:
+    delete:
+      tags:
+        - Items
+      summary: Delete an image from an item
+      description: Delete a image from an item by providing the ID of the item and image.
+      operationId: deleteItemImage
+      parameters:
+        - name: itemId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The ID of the item.
+          example: xpzpvny244z3
+        - name: imageId
+          in: path
+          schema:
+            type: string
+          required: true
+          description: The ID of the image.
+          example: 0j2rmkq7vr6y
+      responses:
+        '204':
+          description: >-
+            No Content. The resource was successfully deleted and there is no
+            content to display.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+        '409':
+          description: There is a concurrent modification conflict.
+  /items/{id}/sold:
+    put:
+      summary: Mark an item as sold
+      description: >-
+        Only applies to items sold outside of Wallapop. Change the item's status
+        to "sold" after the payment has been completed outside of Wallapop.
+      operationId: markItemAsSold
+      tags:
+        - Items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            description: The ID of the item.
+            example: xpzpvny244z3
+      responses:
+        '204':
+          description: The item was successfully marked as "sold".
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/{id}/activate:
+    put:
+      summary: Publish an inactive item
+      description: >-
+        If you have deactivated a published item, you can re-publish it by using
+        this endpoint. Requires a Wallapop Pro subscription. Refer to
+        [Activating and deactivating
+        products](https://ayuda.wallapop.com/hc/es-es/articles/23521878501137-Activaci%C3%B3n-y-desactivaci%C3%B3n-de-productos).
+      operationId: activateItem
+      tags:
+        - Items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            description: The ID of the item.
+            example: xpzpvny244z3
+      responses:
+        '204':
+          description: >-
+            No Content. The resource was successfully published and there is no
+            content to display.
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/{id}/inactivate:
+    put:
+      summary: Deactivate a published item
+      description: >-
+        Deactivate a published item to hide it from buyers on Wallapop. Requires
+        a Wallapop Pro subscription. Refer to [Activating and deactivating
+        products](https://ayuda.wallapop.com/hc/es-es/articles/23521878501137-Activaci%C3%B3n-y-desactivaci%C3%B3n-de-productos)
+        for more details.
+      operationId: inactivateItem
+      tags:
+        - Items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            description: The ID of the item.
+            example: xpzpvny244z3
+      responses:
+        '204':
+          description: The item was successfully deactivated.
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/{id}/reserve:
+    put:
+      summary: Reserve an item
+      description: Reserve a published item.
+      operationId: reserveItem
+      tags:
+        - Items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            description: The ID of the item.
+            example: xpzpvny244z3
+      responses:
+        '204':
+          description: The item was successfully reserved.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/{id}/unreserve:
+    put:
+      summary: Cancel an item reservation
+      description: Cancel an item reservation.
+      operationId: unReserveItem
+      tags:
+        - Items
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+            description: The ID of the item.
+            example: xpzpvny244z3
+      responses:
+        '204':
+          description: The item reservation was successfully cancelled.
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '403':
+          description: >-
+            Forbidden. The user does not have permission to access the requested
+            resource.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+  /items/categories:
+    get:
+      summary: Retrieve all categories
+      description: >-
+        Retrieve Wallaop's complete category hierarchy for items. This list will
+        help you identify the categories that best classify the items you want
+        to sell.
+      tags:
+        - Items
+        - Categories
+      parameters:
+        - name: Accept-Language
+          in: header
+          required: false
+          schema:
+            type: string
+          description: >-
+            The language of the category title will be returned when it has
+            translations in different languages.
+          example: es
+      responses:
+        '200':
+          description: The categories were successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoriesResponse'
+  /items/categories/{id}/attributes:
+    get:
+      summary: Retrieve a category's attributes
+      description: >-
+        Returns the acceptable attributes for items categorized by category,
+        including mandatory and optional attributes.
+      operationId: getCategoryAttributes
+      tags:
+        - Items
+        - Categories
+      parameters:
+        - in: path
+          name: id
+          required: true
+          schema:
+            type: string
+          description: The ID of the category.
+          example: '12467'
+        - name: Accept-Language
+          in: header
+          required: false
+          schema:
+            type: string
+          description: >-
+            The language used to present the attribute title when it has
+            translations in multiple languages.
+          example: es
+      responses:
+        '200':
+          description: The category's attributes were successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CategoryAttributesResponse'
+        '404':
+          description: Not Found. A resource with the specified ID does not exist.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+  /items/limits:
+    get:
+      tags:
+        - Items
+      summary: Retrieve the authenticated user's listing limits
+      description: >-
+        Returns the listing limits that apply to the authenticated user, grouped
+        per limit. Each entry lists the categories that share the limit along
+        with the total capacity, the number of items currently counted against
+        it, and the remaining slots.
+      operationId: getMyItemsLimits
+      responses:
+        '200':
+          description: The listing limits were successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GetMyItemsLimitsResponse'
+        '401':
+          description: >-
+            Unauthorized. The request lacks authentication credentials or the
+            provided credentials are invalid.
+  /items/inactive:
+    get:
+      tags:
+        - Items
+      summary: List inactive items
+      description: >
+        Returns a list of items that you have currently inactive (not available
+        for buyers).
+      operationId: userInactiveItems
+      parameters:
+        - name: since
+          in: query
+          schema:
+            type: string
+          description: >-
+            If there is a previous request, include the "next" pagination token
+            from the response's metadata.
+          example: SSMxODk2ODUyODFfRF9VIzc0ODIxMDMzX1AjMjAyMS0wNS0yNVQxNDoxMDoyM1o
+      responses:
+        '200':
+          description: The list of inactive items was successfully retrieved.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/UserItemsResponse'
+        '400':
+          description: >-
+            Bad request. The server cannot process the request due to
+            client-side issues, such as malformed syntax or invalid parameters.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Error'
+        '401':
+          description: >-
+            Unauthorized. The request lacks authentication credentials or the
+            provided credentials are invalid.
+components:
+  securitySchemes:
+    oAuthWithPKCE:
+      type: oauth2
+      description: >-
+        The Items Connect API uses OAuth 2.0 Authorization Code flow with a
+        Proof Key for Code Exchange.
+      flows:
+        authorizationCode:
+          authorizationUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/auth
+          tokenUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          refreshUrl: >-
+            https://iam.wallapop.com/realms/wallapop-connect/protocol/openid-connect/token
+          scopes: {}
+  schemas:
+    CreateItemRequest:
+      type: object
+      required:
+        - item
+        - main_image
+      properties:
+        item:
+          $ref: '#/components/schemas/Item'
+        main_image:
+          $ref: '#/components/schemas/MainImage'
+        stock:
+          $ref: '#/components/schemas/Stock'
+    UpdateItemRequest:
+      type: object
+      required:
+        - item
+      properties:
+        item:
+          $ref: '#/components/schemas/Item'
+        show_discount:
+          type: boolean
+          description: >
+            Whether to display the item discount. Requires a Wallapop Pro
+            subscription. Refer to [Show discounts on your
+            products](https://ayuda.wallapop.com/hc/es-es/articles/12632401453585-Muestra-descuentos-en-tus-productos)
+            for more details.
+          example: false
+        stock:
+          $ref: '#/components/schemas/Stock'
+    Item:
+      type: object
+      required:
+        - category_leaf_id
+        - title
+        - description
+        - price
+      properties:
+        category_leaf_id:
+          type: string
+          description: >-
+            The category used to classify the item. The category must be an
+            assignable category.
+          example: '9931'
+        title:
+          type: string
+          description: The item's title.
+          example: Title example
+        description:
+          type: string
+          description: The item description.
+          example: >-
+            A renowned line of performance and lifestyle sneakers that offer
+            superior comfort, support, and style both on and off the court.
+        price:
+          $ref: '#/components/schemas/ItemPrice'
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+        hashtags:
+          $ref: '#/components/schemas/ItemHashTags'
+        delivery:
+          $ref: '#/components/schemas/DeliveryAttributes'
+    ItemHashTags:
+      type: array
+      deprecated: true
+      description: List of hashtags.
+      example:
+        - awesome
+        - original
+      items:
+        type: string
+    DeliveryAttributes:
+      type: object
+      required:
+        - allowed_by_user
+      properties:
+        allowed_by_user:
+          type: boolean
+          description: Boolean indicating if the seller allows shipping for the item.
+          example: true
+        max_weight_kg:
+          type: integer
+          description: >-
+            The maximum item weight in kilograms for shipping. Acceptable values
+            are `1`, `2`, `5`, `10`, `20`, or `30`?
+          example: 10
+        free_shipping:
+          type: boolean
+          format: uuid
+          description: >
+            Whether to offer free shipping. Requires a Wallapop Pro
+            subscription. For more details, refer to [Offer free
+            shipping](https://ayuda.wallapop.com/hc/es-es/articles/9971072329361-Ofrece-env%C3%ADo-gratis).
+          example: false
+    ItemPrice:
+      required:
+        - cash_amount
+        - currency
+      properties:
+        cash_amount:
+          type: number
+          description: The price of the item.
+          example: 75.5
+        currency:
+          type: string
+          description: The currency code. Only supports `EUR`.
+          example: EUR
+    Attributes:
+      type: object
+      additionalProperties: true
+      description: >
+        Attributes that only apply for some categories. You can retrieve the
+        expected attributes/values by category using [this
+        operation](#category/getCategoryAttributes)
+      example:
+        external_id: '407947058'
+        brand: Abc Design
+        size: 34
+        condition: new
+        color: yellow
+    MainImage:
+      required:
+        - url
+      properties:
+        url:
+          $ref: '#/components/schemas/ExternalImageURL'
+    AddItemImageRequest:
+      required:
+        - url
+        - order
+      properties:
+        url:
+          $ref: '#/components/schemas/ExternalImageURL'
+        order:
+          type: integer
+          minimum: 0
+          description: The order the image will display in the Wallapop interface.
+    ExternalImageURL:
+      type: string
+      description: >
+        Provide a direct link to the image without redirections. The HTTP
+        response code should be 2xx (e.g., 200). Only JPG or JPEG files up to 10
+        MB are allowed.
+      example: http://cdn.portal.com/image129.jpg
+    Image:
+      type: object
+      required:
+        - id
+        - urls
+      properties:
+        id:
+          type: string
+          description: The image ID.
+          example: npj9rg80kmje
+        urls:
+          $ref: '#/components/schemas/ImageURLs'
+    ImageURLs:
+      type: object
+      required:
+        - small
+        - medium
+        - big
+      properties:
+        small:
+          type: string
+          format: uri
+          description: >-
+            For any given image, this is the URL to the smallest version with a
+            maximum width of 320 pixels.
+          example: >-
+            http://cdn-beta.wallapop.com/images/10420/35/71/__/c10420p190124802/i421106105.jpg?pictureSize=W320
+        medium:
+          type: string
+          format: uri
+          description: >-
+            For any given image, this URL links to the medium-sized version with
+            a maximum width of 640 pixels.
+          example: >-
+            http://cdn-beta.wallapop.com/images/10420/35/71/__/c10420p190124802/i421106105.jpg?pictureSize=W640
+        big:
+          type: string
+          format: uri
+          description: >-
+            For any given image, this URL links to the largest-sized version
+            with a maximum width of 800 pixels.
+          example: >-
+            http://cdn-beta.wallapop.com/images/10420/35/71/__/c10420p190124802/i421106105.jpg?pictureSize=W800
+    Metadata:
+      type: object
+      properties:
+        pagination:
+          $ref: '#/components/schemas/PaginationMetadata'
+          description: >-
+            Returns `null` if there are not any results left (a maximum of 40
+            items by page).
+    PaginationMetadata:
+      type: object
+      properties:
+        next:
+          type: string
+          description: >
+            Token used in the next request to fetch the following set of
+            resources.
+          example: SSMxODk2ODUyODFfRF9VIzc0ODIxMDMzX1AjMjAyMS0wNS0yNVQxNDoxMDoyM1o
+    UserItemsResponse:
+      type: object
+      required:
+        - data
+        - meta
+      properties:
+        data:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemInUserItemsResponse'
+          uniqueItems: true
+          minItems: 0
+          description: A list of your items.
+        meta:
+          $ref: '#/components/schemas/Metadata'
+    ItemInUserItemsResponse:
+      type: object
+      required:
+        - id
+        - title
+        - images
+        - price
+      properties:
+        id:
+          type: string
+          description: The ID of the item.
+          example: xpzpvny244z3
+        title:
+          type: string
+          description: The item title.
+          example: Air Jordan shoes
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+          uniqueItems: true
+          minItems: 0
+          description: >
+            A list of all images for an item, which may be empty for newly
+            created items during the resizing process.
+        price:
+          $ref: '#/components/schemas/ItemPrice'
+        reserved:
+          $ref: '#/components/schemas/Reserved'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is reserved. Otherwise, it will be omitted from the item
+            information response.
+        inactive:
+          $ref: '#/components/schemas/Inactive'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is inactive. Otherwise, it will be omitted from the item
+            information response.
+        expired:
+          $ref: '#/components/schemas/Expired'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is expired. Otherwise, it will be omitted from the item
+            information response.
+    ItemDetailResponse:
+      type: object
+      required:
+        - id
+        - title
+        - description
+        - category_leaf_id
+        - images
+        - price
+      properties:
+        id:
+          type: string
+          description: The ID of the item.
+          example: xpzpvny244z3
+        category_leaf_id:
+          type: string
+          description: The ID of the category assigned to the item.
+          example: '9931'
+        title:
+          type: string
+          description: The item title.
+          example: Air Jordan Basketball Shoes
+        description:
+          type: string
+          description: The item description.
+          example: >-
+            A renowned line of performance and lifestyle sneakers that offer
+            superior comfort, support, and style both on and off the court.
+        price:
+          $ref: '#/components/schemas/ItemPrice'
+        images:
+          type: array
+          items:
+            $ref: '#/components/schemas/Image'
+          uniqueItems: true
+          minItems: 0
+          description: |
+            A user-defined ordered list of images associated with the item.
+        attributes:
+          $ref: '#/components/schemas/Attributes'
+        hashtags:
+          $ref: '#/components/schemas/ItemHashTags'
+        delivery:
+          $ref: '#/components/schemas/DeliveryAttributes'
+        reserved:
+          $ref: '#/components/schemas/Reserved'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is reserved. Otherwise, it will be omitted from the item
+            information response.
+        inactive:
+          $ref: '#/components/schemas/Inactive'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is inactive. Otherwise, it will be omitted from the item
+            information response.
+        expired:
+          $ref: '#/components/schemas/Expired'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is expired. Otherwise, it will be omitted from the item
+            information response.
+        sold:
+          $ref: '#/components/schemas/Sold'
+          description: >-
+            This object appears in the response with a value of `true` only if
+            the item is sold. Otherwise, it will be omitted from the item
+            information response.
+        stock:
+          $ref: '#/components/schemas/Stock'
+    Reserved:
+      type: object
+      required:
+        - flag
+      properties:
+        flag:
+          type: boolean
+          description: Whether the item is reserved.
+    Inactive:
+      type: object
+      required:
+        - flag
+      properties:
+        flag:
+          type: boolean
+          description: Whether the item is inactive.
+    Sold:
+      type: object
+      required:
+        - flag
+      properties:
+        flag:
+          type: boolean
+          description: Whether the item is sold.
+    Expired:
+      type: object
+      required:
+        - flag
+      properties:
+        flag:
+          type: boolean
+          description: Whether the item is expired.
+    CategoryAttributeDiscreteValuesResponse:
+      description: >-
+        An attribute that allows selection from a predefined set of options,
+        similar to choosing a value from an enumerated list.
+      required:
+        - id
+        - type
+        - is_mandatory
+        - options
+      properties:
+        id:
+          type: string
+          description: The ID of the attribute.
+        type:
+          type: string
+          enum:
+            - discrete_values
+        is_mandatory:
+          type: boolean
+          description: Indicates whether the attribute is mandatory.
+          example: true
+        mandatory_by_date:
+          $ref: '#/components/schemas/MandatoryByDate'
+        options:
+          type: object
+          description: The options for attributes of type 'discrete_values'.
+          required:
+            - max_choices
+            - values
+          properties:
+            max_choices:
+              type: integer
+              description: The maximum number of selectable options.
+            values:
+              type: array
+              items:
+                type: object
+                required:
+                  - id
+                properties:
+                  id:
+                    type: string
+                    description: >-
+                      The ID of the attribute value, expected when adding or
+                      updating a specific item attribute.
+                  title:
+                    type: string
+                    description: >-
+                      The title of the option in the requested language, if
+                      available.
+    CategoryAttributeTextValueResponse:
+      type: object
+      description: An attribute that accepts text input (i.e., a string of characters).
+      required:
+        - id
+        - type
+        - is_mandatory
+        - max_length
+      properties:
+        id:
+          type: string
+          description: The ID of the attribute.
+        type:
+          type: string
+          enum:
+            - text
+        is_mandatory:
+          type: boolean
+          description: Indicates whether the attribute is mandatory.
+          example: true
+        mandatory_by_date:
+          $ref: '#/components/schemas/MandatoryByDate'
+        max_length:
+          type: integer
+          description: The maximum allowable length for the provided text value.
+          example: 640
+        regex:
+          type: array
+          description: A regex pattern that the provided text value is validated against.
+          items:
+            $ref: '#/components/schemas/RegexValidation'
+    RegexValidation:
+      type: object
+      description: The regex validation applied to the value.
+      required:
+        - type
+        - value
+      properties:
+        type:
+          type: string
+          description: >
+            Indicates how the regex pattern is applied. The possible values
+            include: `not_match` or `not_contain`.
+          example: not_contain
+        value:
+          type: string
+          description: The regex pattern.
+          example: ^(\s+$)
+    CategoryAttributeNumericValueResponse:
+      description: An attribute that accepts numerical values.
+      required:
+        - id
+        - type
+        - is_mandatory
+        - data_type
+      properties:
+        id:
+          type: string
+          description: The ID of the attribute.
+        type:
+          type: string
+          enum:
+            - numeric
+        is_mandatory:
+          type: boolean
+          description: Indicates whether the attribute is mandatory.
+          example: true
+        mandatory_by_date:
+          $ref: '#/components/schemas/MandatoryByDate'
+        data_type:
+          type: object
+          description: >-
+            Information about the numeric data type. See the [OpenAPI
+            Specification](https://spec.openapis.org/oas/latest.html#data-types)
+            for more details.
+          properties:
+            type:
+              type: string
+              enum:
+                - integer
+                - number
+              description: The numeric data type.
+            format:
+              type: string
+              enum:
+                - int32
+                - int64
+                - float
+                - double
+              description: The format of the numeric data type.
+        range:
+          type: object
+          description: The allowed range for the numeric value.
+          properties:
+            greater_than_or_equal:
+              type: integer
+              description: The minimum allowed value (inclusive).
+            less_than_or_equal:
+              type: integer
+              description: The maximum allowed value (inclusive).
+    CategoryAttributesResponse:
+      type: object
+      properties:
+        attributes:
+          type: array
+          items:
+            type: object
+            oneOf:
+              - $ref: '#/components/schemas/CategoryAttributeDiscreteValuesResponse'
+              - $ref: '#/components/schemas/CategoryAttributeTextValueResponse'
+              - $ref: '#/components/schemas/CategoryAttributeNumericValueResponse'
+          example:
+            example:
+              attributes:
+                - id: condition
+                  type: discrete_values
+                  is_mandatory: true
+                  options:
+                    max_choices: 1
+                  values:
+                    - id: new
+                      title: Nuevo
+                    - id: as_good_as_new
+                      title: Como nuevo
+                    - id: good
+                      title: En buen estado
+                    - id: fair
+                      title: En condiciones aceptables
+                    - id: has_given_it_all
+                      title: Lo ha dado todo
+                - id: brand
+                  type: text
+                  is_mandatory: true
+                  max_length: 75
+                - id: height_cm
+                  type: numeric
+                  is_mandatory: false
+                  data_type:
+                    type: integer
+                  range:
+                    greater_than_or_equal: 0
+                    less_than_or_equal: 999
+    Error:
+      type: object
+      required:
+        - code
+        - message
+      description: Additional detailed information regarding the error.
+      properties:
+        code:
+          type: string
+          enum:
+            - INVALID_BODY_REQUEST
+            - MISSING_MAIN_IMAGE
+            - USER_LOCATION_MISSING
+            - INVALID_CATEGORY_LEAF
+            - INVALID_LOCATION
+            - INVALID_ITEM_ID
+            - INVALID_IMAGE
+            - INVALID_ATTRIBUTE
+            - NOT_IMPLEMENTED_CATEGORY
+            - INVALID_STATUS
+            - MAX_IMAGES_EXCEED
+            - INSUFFICIENT_IMAGES
+            - USER_UNAUTHORIZED
+          description: >-
+            The error code corresponds to one of the values from the specified
+            enumeration list.
+          example: USER_LOCATION_MISSING
+        message:
+          description: A detailed error description.
+          type: string
+          example: User without location set
+    CategoriesResponse:
+      type: object
+      properties:
+        categories:
+          type: array
+          description: >-
+            Wallapop's category hierarchy used to classify items. Some
+            categories serve as grouping mechanisms, while others can be
+            assigned to items.
+          items:
+            $ref: '#/components/schemas/Category'
+    Category:
+      type: object
+      properties:
+        id:
+          type: integer
+          description: The ID of the category.
+          example: 24200
+        parent_id:
+          type: integer
+          description: >
+            If the category is a subcategory, the `parent_id` indicates the
+            category it is logically nested under. It returns `null` if the
+            category is a root-level category, meaning it is not nested under
+            another category.
+          example: 24200
+        name:
+          type: string
+          description: >
+            The category name will be translated according to the
+            `Accept-Language` header. If Wallapop does not support the language,
+            it will default to English.
+          example: Tecnología y electrónica
+        assignable_to_item:
+          type: boolean
+          description: >
+            When set to `true`, a category can be assigned to an item. If set to
+            `false`, it acts as a parent category and cannot be selected
+            directly, containing more specific subcategories. Wallapop
+            encourages users to choose the most specific subcategory, so
+            top-level and intermediate categories in certain trees cannot be
+            assigned to items.
+          example: false
+        subcategories:
+          type: array
+          description: >-
+            A list of subcategories that are logically nested under this
+            category. An empty list in the response indicates that the category
+            can be assigned to an item and that there are no specific
+            subcategories available for selection.
+          example:
+            - id: 10414
+              parent_id: 24200
+              name: TV
+              assignable_to_item: true
+          items:
+            $ref: '#/components/schemas/Category'
+    Stock:
+      type: object
+      description: >-
+        The quantity of the item in the seller's inventory. This feature is only
+        available to Wallapop Pro users. See [Add stock to your
+        items](https://ayuda.wallapop.com/hc/es-es/articles/24311666443025-A%C3%B1ade-stock-a-tus-art%C3%ADculos).
+      required:
+        - units
+      properties:
+        units:
+          type: integer
+          description: |
+            The number of units you have available to sell of this item.
+    MandatoryByDate:
+      type: string
+      format: date
+      description: The expected date after which the attribute will be mandatory.
+      example: '2024-12-30'
+    GetMyItemsLimitsResponse:
+      type: object
+      required:
+        - limits
+      properties:
+        limits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ItemLimitResponse'
+    ItemLimitResponse:
+      type: object
+      required:
+        - used
+        - category_ids
+      properties:
+        total:
+          type: integer
+          format: int64
+          nullable: true
+          description: >-
+            The maximum number of items allowed. `null` when the limit is
+            infinite.
+          example: 200
+        used:
+          type: integer
+          format: int64
+          description: Number of currently published items counted against this limit.
+          example: 1
+        available:
+          type: integer
+          format: int64
+          nullable: true
+          description: Remaining slots (`total - used`). `null` when the limit is infinite.
+          example: 199
+        category_ids:
+          type: array
+          items:
+            type: integer
+            format: int64
+          description: Category ids that share this limit.
+          example:
+            - 12461
+            - 12463
+            - 12465
+            - 12467
