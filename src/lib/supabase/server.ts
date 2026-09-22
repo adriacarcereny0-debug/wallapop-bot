@@ -4,22 +4,22 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { getEnv } from '@/lib/config/env';
 
 /**
- * Cliente Supabase ligado a la sesión del usuario (respeta RLS).
- * Es el que debe usarse en el 99 % de los casos.
+ * Cliente Supabase ligado a la sesión del usuario. Respeta RLS.
+ * Es el que debe usarse prácticamente siempre.
  */
 export async function createSupabaseServerClient(): Promise<SupabaseClient> {
   const env = getEnv();
   const cookieStore = await cookies();
 
-  return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.NEXT_PUBLIC_SUPABASE_ANON_KEY!, {
+  return createServerClient(env.NEXT_PUBLIC_SUPABASE_URL, env.NEXT_PUBLIC_SUPABASE_ANON_KEY, {
     cookies: {
       getAll: () => cookieStore.getAll(),
       setAll: (list) => {
         try {
           for (const { name, value, options } of list) cookieStore.set(name, value, options);
         } catch {
-          // Los Server Components no pueden escribir cookies; el middleware
-          // refresca la sesión, así que ignorar aquí es correcto.
+          // Los Server Components no pueden escribir cookies. El middleware
+          // refresca la sesión, así que ignorarlo aquí es correcto.
         }
       },
     },
@@ -29,24 +29,19 @@ export async function createSupabaseServerClient(): Promise<SupabaseClient> {
 /**
  * Cliente con clave de servicio: **ignora RLS**.
  *
- * Uso permitido únicamente en:
- *   - el receptor de webhooks de Wallapop (no hay sesión de usuario),
+ * Uso permitido únicamente donde no hay sesión de usuario:
+ *   - el receptor de webhooks de Wallapop,
  *   - tareas de mantenimiento del servidor.
  *
- * Nunca debe alcanzarse desde una ruta que sirva datos al navegador sin
- * filtrar explícitamente por `user_id`.
+ * Cualquier consulta hecha con este cliente DEBE filtrar por `user_id` a mano.
  */
 export async function createSupabaseAdminClient(): Promise<SupabaseClient> {
   const env = getEnv();
-  if (!env.SUPABASE_SERVICE_ROLE_KEY) {
-    throw new Error('SUPABASE_SERVICE_ROLE_KEY no está configurada');
-  }
 
-  // Importación diferida: mantiene el SDK fuera de cualquier bundle que no lo
-  // necesite y evita mezclar CommonJS con ESM.
+  // Importación diferida: mantiene el SDK fuera de los bundles que no lo usan.
   const { createClient } = await import('@supabase/supabase-js');
 
-  return createClient(env.NEXT_PUBLIC_SUPABASE_URL!, env.SUPABASE_SERVICE_ROLE_KEY, {
+  return createClient(env.NEXT_PUBLIC_SUPABASE_URL, env.SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
 }

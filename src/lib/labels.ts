@@ -14,7 +14,6 @@ import type { Tone } from '@/components/ui/primitives';
  */
 
 export const ACCOUNT_STATUS: Record<AccountStatus, { label: string; tone: Tone }> = {
-  demo: { label: 'Demo', tone: 'info' },
   connected: { label: 'Conectada', tone: 'success' },
   needs_attention: { label: 'Requiere atención', tone: 'warning' },
   disconnected: { label: 'Desconectada', tone: 'danger' },

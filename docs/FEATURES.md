@@ -14,15 +14,31 @@ Lista explícita, punto por punto, de lo que pidió el cliente.
 | Modificar anuncios | Edición en la aplicación; envío a Wallapop mediante `PUT /items/{itemId}` cuando la integración está activa |
 | Gestionar varias cuentas desde un panel | Arquitectura multicuenta completa, con filtro global y aislamiento de datos |
 | Gestionar mensajes de compradores | **En modo asistente** (ver limitaciones) |
+| Publicar anuncios en Wallapop | Implementado con `POST /items`. Requiere credenciales de integrador |
+| Modificar anuncios publicados | Implementado con `PUT /items/{itemId}` |
+| Marcar como vendido en Wallapop | Implementado con `PUT /items/{id}/sold` |
+| Conectar varias cuentas por OAuth | Flujo PKCE completo, con tokens cifrados y renovación automática |
+| Subir fotografías | Supabase Storage, con aislamiento por usuario |
 | Generar respuestas con IA | `generateReply` con botones Editar / Regenerar / Copiar |
 | Ayudar en la negociación | `negotiate`: contraofertas contra objetivo y mínimo, nunca por debajo del mínimo |
 | Gestionar catálogo/productos | Catálogo central con SKU, precios, características, stock y notas internas |
 | Estadísticas y control de actividad | Panel con cifras propias, registro de actividad y trazabilidad de IA |
 | Evitar acciones que provoquen bloqueos | Mapa de capacidades que impide ejecutar lo no autorizado; límite de 36 req/s respetado |
-| Modo demo completo | Toda la aplicación funciona sin servicios externos |
 | Base de datos preparada | Esquema PostgreSQL con RLS en todas las tablas |
 | Seguridad | Auth, RLS, validación, límite de peticiones, cifrado de tokens, cabeceras |
 | Preparado para GitHub y Vercel | README, `.env.example`, `.gitignore`, documentación completa |
+
+### Fotografías: implementado, con un límite deliberado
+
+Subida a Supabase Storage y mejora por IA con Gemini. Las ediciones disponibles
+son un **catálogo cerrado** de tres: fondo neutro, iluminación y encuadre.
+
+No se puede borrar un arañazo, añadir accesorios, cambiar el color ni simular
+otro modelo. No es una carencia técnica: esas opciones no existen en el código,
+y hay tests que lo comprueban. Una foto que oculte un daño convierte una venta
+legítima en un engaño.
+
+La foto original nunca se sustituye: la mejorada se guarda aparte y marcada.
 
 ### Funciones de IA disponibles
 
@@ -31,22 +47,7 @@ Lista explícita, punto por punto, de lo que pidió el cliente.
 
 ---
 
-## ⚠️ Implementado parcialmente
-
-### Generación y mejora de imágenes
-
-**Implementado:** la capa de decisión. `generateImagePrompt` construye el prompt
-de edición y **rechaza** las peticiones que falsearían el producto (borrar
-arañazos, añadir accesorios, cambiar el color, simular otro modelo). Hay tests
-que lo verifican.
-
-**Pendiente:** conectar un proveedor de imágenes real (`IMAGE_PROVIDER` admite
-`openai` y `gemini`, hoy en `demo`) y el almacenamiento en object storage. El
-esquema ya contempla `product_images` con `url`, `kind` y `transformation`, y
-guarda URLs, nunca binarios.
-
-**Motivo:** requiere elegir proveedor y bucket, que son decisiones de coste del
-cliente. La lógica de veracidad, que es la parte delicada, ya está hecha.
+## ⚠️ Implementado con matices
 
 ### Rotación de anuncios
 

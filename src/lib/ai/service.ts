@@ -1,7 +1,6 @@
 import { getEnv } from '@/lib/config/env';
 import type { AIProvider } from './provider';
 import { AnthropicProvider } from './providers/anthropic';
-import { DemoAIProvider } from './providers/demo';
 import { GROUNDING_RULES, IMAGE_RULES, NEGOTIATION_RULES, REPLY_RULES } from './prompts';
 import {
   conversationAnalysisSchema,
@@ -45,15 +44,20 @@ function describeProduct(product: ProductInput): string {
   return lines.join('\n');
 }
 
-function createProvider(): AIProvider {
+/**
+ * Dos proveedores, dos modelos.
+ *
+ * `main` redacta el texto que acaba publicado: ahí la calidad se nota y se
+ * paga. `fast` cubre el trabajo de usar y tirar (borradores de respuesta,
+ * análisis de conversación), donde un modelo económico da lo mismo. Separarlos
+ * es lo que permite recortar el gasto sin tocar la calidad del anuncio.
+ */
+function createProviders(): { main: AIProvider; fast: AIProvider } {
   const env = getEnv();
-  switch (env.AI_PROVIDER) {
-    case 'anthropic':
-      return new AnthropicProvider(env.ANTHROPIC_API_KEY!, env.ANTHROPIC_MODEL);
-    case 'demo':
-    default:
-      return new DemoAIProvider();
-  }
+  return {
+    main: new AnthropicProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL),
+    fast: new AnthropicProvider(env.ANTHROPIC_API_KEY, env.ANTHROPIC_MODEL_FAST),
+  };
 }
 
 /**
@@ -63,16 +67,28 @@ function createProvider(): AIProvider {
  * API viven sólo en el servidor y nunca cruzan al navegador.
  */
 export class AIService {
-  constructor(private readonly provider: AIProvider = createProvider()) {}
+  private readonly main: AIProvider;
+  private readonly fast: AIProvider;
+
+  /**
+   * En producción se construye sin argumentos. Los tests inyectan un proveedor
+   * determinista para no gastar dinero ni depender de la red.
+   */
+  constructor(providers?: { main: AIProvider; fast?: AIProvider }) {
+    const resolved = providers ?? createProviders();
+    this.main = resolved.main;
+    this.fast = resolved.fast ?? resolved.main;
+  }
 
   get providerName(): string {
-    return this.provider.name;
+    return this.main.name;
   }
 
   /** Genera título, descripción y recomendaciones para un producto nuevo. */
   generateListing(product: ProductInput): Promise<AIResult<GeneratedListing>> {
-    return this.provider.complete({
+    return this.main.complete({
       fn: 'generateListing',
+      effort: 'medium',
       system: GROUNDING_RULES,
       schema: generatedListingSchema,
       prompt:
@@ -86,8 +102,9 @@ export class AIService {
     product: ProductInput,
     current: { title: string; description: string },
   ): Promise<AIResult<GeneratedListing>> {
-    return this.provider.complete({
+    return this.main.complete({
       fn: 'improveListing',
+      effort: 'medium',
       system: GROUNDING_RULES,
       schema: generatedListingSchema,
       prompt:
@@ -111,7 +128,7 @@ export class AIService {
       .map(([k, v]) => `- ${k}: ${v}`)
       .join('\n');
 
-    return this.provider.complete({
+    return this.main.complete({
       fn: 'optimizeListing',
       system:
         `${GROUNDING_RULES}\n\n` +
@@ -137,7 +154,7 @@ export class AIService {
     lastMessage: string;
     history: string[];
   }): Promise<AIResult<ConversationAnalysis>> {
-    return this.provider.complete({
+    return this.fast.complete({
       fn: 'analyzeConversation',
       system: GROUNDING_RULES,
       schema: conversationAnalysisSchema,
@@ -167,7 +184,7 @@ export class AIService {
       .map(([k, v]) => `- ${k}: ${v}`)
       .join('\n');
 
-    return this.provider.complete({
+    return this.fast.complete({
       fn: 'generateReply',
       system: REPLY_RULES,
       schema: replyDraftSchema,
@@ -191,7 +208,7 @@ export class AIService {
     minPriceCents: number;
     offerCents: number;
   }): Promise<AIResult<NegotiationAdvice>> {
-    return this.provider.complete({
+    return this.fast.complete({
       fn: 'negotiate',
       system: NEGOTIATION_RULES,
       schema: negotiationAdviceSchema,
@@ -207,7 +224,7 @@ export class AIService {
 
   /** Clasifica un producto y sugiere precio, separando dato de deducción. */
   analyzeProduct(product: ProductInput): Promise<AIResult<ProductAnalysis>> {
-    return this.provider.complete({
+    return this.main.complete({
       fn: 'analyzeProduct',
       system: GROUNDING_RULES,
       schema: productAnalysisSchema,
@@ -224,7 +241,7 @@ export class AIService {
     condition: string;
     requestedEdit: string;
   }): Promise<AIResult<ImagePrompt>> {
-    return this.provider.complete({
+    return this.fast.complete({
       fn: 'generateImagePrompt',
       system: IMAGE_RULES,
       schema: imagePromptSchema,

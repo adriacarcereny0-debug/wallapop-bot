@@ -129,3 +129,10 @@ export function refreshTokens(params: {
     }),
   );
 }
+
+/**
+ * Cookie httpOnly donde viaja el estado del flujo OAuth (verificador PKCE,
+ * `state` y cuenta de destino) entre el inicio y la vuelta de Wallapop.
+ * Vive aquí porque un fichero `route.ts` sólo puede exportar métodos HTTP.
+ */
+export const OAUTH_COOKIE = 'wa_oauth';

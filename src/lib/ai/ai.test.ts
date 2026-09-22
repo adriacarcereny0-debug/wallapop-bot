@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest';
 import { AIService } from './service';
 import { DemoAIProvider } from './providers/demo';
 
-const service = new AIService(new DemoAIProvider());
+const service = new AIService({ main: new DemoAIProvider() });
 
 const product = {
   name: 'iPhone 15 Pro 256 GB',
@@ -129,8 +129,8 @@ describe('analyzeConversation', () => {
   });
 });
 
-describe('coste en modo demo', () => {
-  it('no genera coste alguno', async () => {
+describe('registro de coste', () => {
+  it('el proveedor de pruebas no imputa coste', async () => {
     const { usage } = await service.generateListing(product);
     expect(usage.costCents).toBe(0);
   });

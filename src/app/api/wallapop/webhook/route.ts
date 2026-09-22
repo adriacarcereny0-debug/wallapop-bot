@@ -1,5 +1,5 @@
 import { NextResponse } from 'next/server';
-import { getEnv } from '@/lib/config/env';
+import { getEnv, isWallapopConfigured } from '@/lib/config/env';
 import {
   SIGNATURE_HEADER,
   TIMESTAMP_HEADER,
@@ -19,11 +19,11 @@ import {
  *     usarse para deduplicar al persistirlos.
  */
 export async function POST(request: Request) {
-  const env = getEnv();
-
-  if (!env.WALLAPOP_INTEGRATION_ENABLED) {
-    return NextResponse.json({ error: 'Integración desactivada.' }, { status: 404 });
+  if (!isWallapopConfigured()) {
+    return NextResponse.json({ error: 'Integración no configurada.' }, { status: 404 });
   }
+
+  const env = getEnv();
 
   const rawBody = await request.text();
 

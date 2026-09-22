@@ -1,5 +1,5 @@
 import { Notice, Pill, SectionHeader, Surface } from '@/components/ui/primitives';
-import { getEnv } from '@/lib/config/env';
+import { isWallapopConfigured } from '@/lib/config/env';
 import {
   CAPABILITIES,
   CAPABILITY_LABELS,
@@ -42,7 +42,7 @@ const GROUPS: { level: CapabilityLevel; title: string; intro: string }[] = [
 ];
 
 export default function IntegrationPage() {
-  const env = getEnv();
+  const configured = isWallapopConfigured();
 
   return (
     <>
@@ -53,16 +53,16 @@ export default function IntegrationPage() {
 
       <div className="mb-6 flex flex-col gap-3">
         <Notice
-          tone={env.WALLAPOP_INTEGRATION_ENABLED ? 'success' : 'info'}
+          tone={configured ? 'success' : 'info'}
           title={
-            env.WALLAPOP_INTEGRATION_ENABLED
-              ? 'Integración activada'
-              : 'Integración desactivada'
+            configured
+              ? 'Credenciales configuradas'
+              : 'Pendiente del alta de integrador'
           }
         >
-          {env.WALLAPOP_INTEGRATION_ENABLED
+          {configured
             ? 'La aplicación puede operar contra la Wallapop Connect API con las cuentas conectadas.'
-            : 'Ninguna operación sale hacia Wallapop. Para activarla necesitas credenciales de aplicación integradora y verificar los endpoints contra el portal oficial de desarrolladores.'}
+            : 'Ninguna operación sale hacia Wallapop. Hacen falta credenciales de aplicación integradora, que Wallapop concede a vendedores profesionales tras solicitar el alta.'}
         </Notice>
 
         <Notice tone="warning" title="Verifica antes de conectar cuentas reales">

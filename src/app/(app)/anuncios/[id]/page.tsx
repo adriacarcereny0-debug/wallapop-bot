@@ -1,11 +1,15 @@
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
+import { ListingEditor } from '@/components/listings/listing-editor';
 import { ListingOptimizer } from '@/components/listings/optimizer';
-import { Pill, SectionHeader, Surface, buttonClass } from '@/components/ui/primitives';
+import { PublishPanel } from '@/components/listings/publish-panel';
+import { Pill, SectionHeader, Surface } from '@/components/ui/primitives';
 import { getSession } from '@/lib/auth/session';
+import { isWallapopConfigured } from '@/lib/config/env';
 import { getRepository } from '@/lib/data';
 import { formatCurrency, formatRelative } from '@/lib/format';
 import { LISTING_STATUS } from '@/lib/labels';
+import type { Listing, Product } from '@/types/domain';
 
 interface PageProps {
   params: Promise<{ id: string }>;
@@ -18,7 +22,7 @@ export default async function ListingDetailPage({ params }: PageProps) {
   const { id } = await params;
   const repo = await getRepository();
 
-  // El repositorio filtra por userId: un id ajeno devuelve null, no el anuncio.
+  // getListing filtra por userId: un id ajeno devuelve null, no el anuncio.
   const listing = await repo.getListing(session.userId, id);
   if (!listing) notFound();
 
@@ -45,24 +49,13 @@ export default async function ListingDetailPage({ params }: PageProps) {
 
       <div className="grid gap-6 lg:grid-cols-[1.3fr_1fr] lg:items-start [&>*]:min-w-0">
         <div className="flex flex-col gap-6">
-          <Surface className="p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
-              Descripción
-            </h2>
-            <p className="mt-2.5 max-w-[68ch] text-sm leading-relaxed whitespace-pre-line">
-              {listing.description || 'Este anuncio todavía no tiene descripción.'}
-            </p>
-
-            {listing.hashtags.length > 0 && (
-              <div className="mt-4 flex flex-wrap gap-1.5">
-                {listing.hashtags.map((tag) => (
-                  <Pill key={tag} tone="neutral">
-                    #{tag}
-                  </Pill>
-                ))}
-              </div>
-            )}
-          </Surface>
+          <ListingEditor
+            listingId={listing.id}
+            title={listing.title}
+            description={listing.description}
+            priceEuros={(listing.priceCents / 100).toFixed(2).replace('.', ',')}
+            categoryLeafId={listing.categoryLeafId}
+          />
 
           <ListingOptimizer
             title={listing.title}
@@ -75,6 +68,14 @@ export default async function ListingDetailPage({ params }: PageProps) {
         </div>
 
         <div className="flex flex-col gap-4">
+          <PublishPanel
+            listingId={listing.id}
+            externalItemId={listing.externalItemId}
+            accountConnected={account?.status === 'connected'}
+            integrationConfigured={isWallapopConfigured()}
+            blockers={findBlockers(listing, product)}
+          />
+
           <Surface className="p-5">
             <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">Precios</h2>
             <dl className="mt-3 flex flex-col gap-2 text-sm">
@@ -92,29 +93,49 @@ export default async function ListingDetailPage({ params }: PageProps) {
             </p>
           </Surface>
 
+          {product && (
+            <Surface className="p-5">
+              <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
+                Producto
+              </h2>
+              <p className="mt-2.5 text-sm font-medium">{product.name}</p>
+              <p className="mt-0.5 font-mono text-2xs text-faint">{product.sku}</p>
+              <p className="mt-2 text-xs text-muted">
+                {product.images.length} fotografía(s) · {product.category}
+              </p>
+              <Link
+                href={`/productos/${product.id}`}
+                className="mt-3 inline-block text-xs text-accent hover:underline"
+              >
+                Abrir producto →
+              </Link>
+            </Surface>
+          )}
+
           {listing.attentionReason && (
             <Surface className="border-warning/35 bg-warning-soft p-4">
               <p className="text-sm font-semibold text-warning">Requiere revisión</p>
               <p className="mt-1 text-xs leading-relaxed text-muted">{listing.attentionReason}</p>
             </Surface>
           )}
-
-          <Surface className="p-5">
-            <h2 className="text-xs font-semibold tracking-wide text-muted uppercase">
-              Publicación
-            </h2>
-            <p className="mt-2.5 text-sm leading-relaxed text-muted">
-              Publicar o modificar este anuncio en Wallapop requiere la integración activada y la
-              cuenta conectada por OAuth.
-            </p>
-            <Link href="/integracion" className={buttonClass('secondary', 'mt-3 w-full text-xs')}>
-              Ver estado de la integración
-            </Link>
-          </Surface>
         </div>
       </div>
     </>
   );
+}
+
+/** Requisitos que Wallapop exige y que el anuncio todavía no cumple. */
+function findBlockers(listing: Listing, product: Product | null): string[] {
+  const blockers: string[] = [];
+
+  if (!listing.description.trim()) blockers.push('Falta la descripción.');
+  if (listing.priceCents <= 0) blockers.push('El precio debe ser mayor que cero.');
+  if (!listing.categoryLeafId) blockers.push('Falta la categoría de Wallapop.');
+  if (!product || product.images.length === 0) {
+    blockers.push('El producto necesita al menos una fotografía.');
+  }
+
+  return blockers;
 }
 
 function Row({ label, value, strong }: { label: string; value: string; strong?: boolean }) {

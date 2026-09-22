@@ -18,13 +18,12 @@ export type SaleId = string;
 // ── Cuentas de Wallapop ──────────────────────────────────────────────────────
 
 /**
- * Estado de conexión de una cuenta.
- * - `demo`        → cuenta ficticia, no toca ningún servicio externo.
- * - `connected`   → OAuth válido contra Wallapop Connect.
+ * Estado de conexión de una cuenta de Wallapop.
+ * - `connected`       → autorización OAuth válida contra Wallapop Connect.
  * - `needs_attention` → token caducado, error de sincronización o límite alcanzado.
- * - `disconnected`→ sin autorización activa.
+ * - `disconnected`    → creada en la aplicación pero sin autorizar todavía.
  */
-export type AccountStatus = 'demo' | 'connected' | 'needs_attention' | 'disconnected';
+export type AccountStatus = 'connected' | 'needs_attention' | 'disconnected';
 
 export interface Account {
   id: AccountId;
@@ -34,8 +33,6 @@ export interface Account {
   /** Identificador interno legible y estable, p. ej. "cuenta-01". */
   slug: string;
   status: AccountStatus;
-  /** `true` si es una cuenta de demostración con datos ficticios. */
-  isDemo: boolean;
   lastSyncedAt: string | null;
   /** Motivo legible cuando `status === 'needs_attention'`. */
   attentionReason: string | null;

@@ -1,85 +1,67 @@
 # Variables de entorno
 
-Plantilla completa en [`.env.example`](../.env.example). Cópiala a `.env.local`.
+Plantilla completa en [`.env.example`](../.env.example). Cópiala a `.env.local`
+en local, o pégalas en Vercel en producción.
 
 **Regla:** sólo las variables `NEXT_PUBLIC_*` llegan al navegador. Todo lo demás
-se queda en el servidor. Ninguna clave secreta lleva ese prefijo, y el esquema
-de validación lo impide por diseño.
+se queda en el servidor. Ninguna clave secreta lleva ese prefijo.
 
-El arranque valida el entorno (`src/lib/config/env.ts`). Si falta algo necesario
-para el modo activo, la aplicación **falla al arrancar**, no a mitad de una
+El arranque valida el entorno (`src/lib/config/env.ts`). Si falta algo, la
+aplicación **falla al arrancar** diciendo exactamente qué, no a mitad de la
 petición de un usuario.
 
+Una variable creada pero **vacía** cuenta como no configurada. Eso permite dejar
+en blanco las opcionales sin romper nada.
+
 ---
 
-## Aplicación
+## Obligatorias
 
-| Variable | Obligatoria | Por defecto | Descripción |
-|---|---|---|---|
-| `NEXT_PUBLIC_APP_URL` | No | `http://localhost:3000` | URL pública. En producción, tu dominio |
-| `DATA_MODE` | No | `demo` | `demo` (memoria) o `supabase` |
+Sin estas cinco la aplicación no arranca.
 
-## Supabase — obligatorias si `DATA_MODE=supabase`
-
-| Variable | Descripción |
+| Variable | De dónde sale |
 |---|---|
-| `NEXT_PUBLIC_SUPABASE_URL` | URL del proyecto |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Clave pública. Es segura en el navegador **porque RLS está activado** |
-| `SUPABASE_SERVICE_ROLE_KEY` | ⚠️ **Ignora RLS.** Sólo servidor. Nunca con prefijo `NEXT_PUBLIC_` |
+| `NEXT_PUBLIC_SUPABASE_URL` | Supabase → Project Settings → API → Project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Misma pantalla → clave `anon` `public` |
+| `SUPABASE_SERVICE_ROLE_KEY` | Misma pantalla → clave `service_role`. ⚠️ **Ignora RLS** |
+| `ANTHROPIC_API_KEY` | console.anthropic.com → API Keys |
+| `TOKEN_ENCRYPTION_KEY` | `openssl rand -base64 32` |
 
-## IA
+> ⚠️ Si cambias `TOKEN_ENCRYPTION_KEY`, los tokens ya guardados dejan de poder
+> descifrarse y todas las cuentas tendrán que reconectarse. Guárdala aparte.
 
-| Variable | Obligatoria | Por defecto | Descripción |
-|---|---|---|---|
-| `AI_PROVIDER` | No | `demo` | `demo` o `anthropic` |
-| `ANTHROPIC_API_KEY` | Sí si `anthropic` | — | Clave de API. Sólo servidor |
-| `ANTHROPIC_MODEL` | No | `claude-sonnet-5` | Modelo a usar |
-| `AI_DAILY_BUDGET_CENTS` | No | `500` | Tope orientativo por usuario y día. `0` = sin tope |
+## Con valor por defecto
 
-## Imágenes
-
-| Variable | Por defecto | Descripción |
+| Variable | Por defecto | Qué hace |
 |---|---|---|
-| `IMAGE_PROVIDER` | `demo` | `demo`, `openai` o `gemini` |
-| `OPENAI_API_KEY` | — | Si `IMAGE_PROVIDER=openai` |
-| `GEMINI_API_KEY` | — | Si `IMAGE_PROVIDER=gemini` |
+| `NEXT_PUBLIC_APP_URL` | `http://localhost:3000` | URL pública. En producción, tu dominio |
+| `SUPABASE_STORAGE_BUCKET` | `product-images` | Bucket de fotos. Lo crea la migración |
+| `ANTHROPIC_MODEL` | `claude-opus-5` | Modelo del texto que se publica |
+| `ANTHROPIC_MODEL_FAST` | `claude-haiku-4-5` | Modelo económico para chat y análisis |
+| `AI_DAILY_BUDGET_CENTS` | `500` | Tope por usuario y día, en céntimos de dólar. `0` = sin tope |
+| `IMAGE_PROVIDER` | `none` | `none`, `gemini` u `openai` |
 
-## Wallapop — obligatorias si `WALLAPOP_INTEGRATION_ENABLED=true`
+## Opcionales
 
-> Antes de activarla, lee [`WALLAPOP_INTEGRATION.md`](WALLAPOP_INTEGRATION.md).
-> Requiere cuenta de vendedor profesional y alta como aplicación integradora.
-
-| Variable | Descripción |
+| Variable | Cuándo hace falta |
 |---|---|
-| `WALLAPOP_INTEGRATION_ENABLED` | `false` por defecto. Con `false`, nada sale hacia Wallapop |
-| `WALLAPOP_CLIENT_ID` | `client_id` de la aplicación integradora |
-| `WALLAPOP_CLIENT_SECRET` | `client_secret`. Sólo servidor |
-| `WALLAPOP_REDIRECT_URI` | Debe coincidir **exactamente** con la registrada en Wallapop |
-| `TOKEN_ENCRYPTION_KEY` | Clave AES-256-GCM para cifrar los tokens OAuth |
+| `GEMINI_API_KEY` | Si `IMAGE_PROVIDER=gemini` |
+| `GEMINI_IMAGE_MODEL` | Por defecto `gemini-2.5-flash-image` |
+| `OPENAI_API_KEY` | Si `IMAGE_PROVIDER=openai` |
+| `OPENAI_IMAGE_MODEL` | Por defecto `gpt-image-1` |
 
-Genera la clave de cifrado con:
+## Wallapop — las tres juntas o ninguna
 
-```bash
-openssl rand -base64 32
-```
+| Variable | Notas |
+|---|---|
+| `WALLAPOP_CLIENT_ID` | Del alta como aplicación integradora |
+| `WALLAPOP_CLIENT_SECRET` | Sólo servidor |
+| `WALLAPOP_REDIRECT_URI` | Debe coincidir **exactamente** con la registrada |
 
-⚠️ **Si cambias `TOKEN_ENCRYPTION_KEY`, los tokens guardados dejan de poder
-descifrarse** y todas las cuentas tendrán que reconectarse. Guárdala como
-cualquier otro secreto crítico.
+Si pones una sola, el arranque falla avisando: media integración es peor que
+ninguna, porque se rompe a mitad del flujo de conexión.
 
----
-
-## Combinaciones válidas
-
-| Escenario | `DATA_MODE` | `AI_PROVIDER` | `WALLAPOP_INTEGRATION_ENABLED` | Coste |
-|---|---|---|---|---|
-| Explorar la interfaz | `demo` | `demo` | `false` | 0 € |
-| Probar la IA de verdad | `demo` | `anthropic` | `false` | Sólo IA |
-| Preproducción | `supabase` | `anthropic` | `false` | IA + Supabase |
-| Producción | `supabase` | `anthropic` | `true` | Todo |
-
-Se recomienda recorrer los escenarios en orden. Wallapop **no tiene entorno de
-pruebas**: cuando llegues al último, cada llamada afecta a tu cuenta real.
+**Sin ellas la aplicación funciona entera** salvo conectar cuentas y publicar.
 
 ---
 
@@ -87,6 +69,6 @@ pruebas**: cuando llegues al último, cada llamada afecta a tu cuenta real.
 
 - La contraseña de Wallapop del usuario. **No se pide, no se usa, no se
   almacena.** La autorización es siempre por OAuth.
-- Tokens OAuth en texto plano. Se cifran con AES-256-GCM antes de escribirse.
+- Tokens OAuth en texto plano. Se cifran con AES-256-GCM.
 - Cookies de sesión de Wallapop.
 - Datos personales de compradores más allá de un alias.

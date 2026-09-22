@@ -1,51 +1,35 @@
-import { getEnv } from '@/lib/config/env';
-import { DEMO_USER_ID } from '@/lib/data/demo-seed';
+import { cache } from 'react';
+import { createSupabaseServerClient } from '@/lib/supabase/server';
 
 export interface Session {
   userId: string;
   email: string;
   displayName: string;
-  /** `true` cuando la sesión es la del modo demo y no hay autenticación real. */
-  isDemo: boolean;
 }
 
 /**
  * Devuelve la sesión activa, o `null` si no la hay.
  *
- * En `DATA_MODE=demo` se devuelve siempre una sesión ficticia: la aplicación es
- * navegable sin montar Supabase. En `DATA_MODE=supabase` se exige una sesión
- * real y verificada contra el servidor de autenticación.
+ * Usa `getUser()`, que valida el token contra el servidor de Supabase. NO se usa
+ * `getSession()`, que sólo lee la cookie y por tanto es falsificable.
+ *
+ * `cache()` deduplica la llamada dentro de una misma petición: el armazón, la
+ * página y sus componentes piden la sesión sin provocar tres viajes de red.
  */
-export async function getSession(): Promise<Session | null> {
-  const env = getEnv();
-
-  if (env.DATA_MODE === 'demo') {
-    return {
-      userId: DEMO_USER_ID,
-      email: 'demo@wallapop-assistant.local',
-      displayName: 'Usuario demo',
-      isDemo: true,
-    };
-  }
-
-  const { createSupabaseServerClient } = await import('@/lib/supabase/server');
+export const getSession = cache(async function getSession(): Promise<Session | null> {
   const supabase = await createSupabaseServerClient();
 
-  // `getUser()` valida el token contra Supabase. No se usa `getSession()`,
-  // que sólo lee la cookie y es falsificable.
   const { data, error } = await supabase.auth.getUser();
   if (error || !data.user) return null;
+
+  const metadata = data.user.user_metadata as { display_name?: string } | null;
 
   return {
     userId: data.user.id,
     email: data.user.email ?? '',
-    displayName:
-      (data.user.user_metadata?.display_name as string | undefined) ??
-      data.user.email?.split('@')[0] ??
-      'Usuario',
-    isDemo: false,
+    displayName: metadata?.display_name ?? data.user.email?.split('@')[0] ?? 'Usuario',
   };
-}
+});
 
 /** Igual que `getSession`, pero lanza si no hay sesión. Para rutas de API. */
 export async function requireSession(): Promise<Session> {

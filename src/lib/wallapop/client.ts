@@ -1,4 +1,4 @@
-import { getEnv } from '@/lib/config/env';
+import { isWallapopConfigured } from '@/lib/config/env';
 import { isAutomatable } from './capabilities';
 
 /**
@@ -32,9 +32,9 @@ export class WallapopError extends Error {
 export class IntegrationDisabledError extends Error {
   constructor(operation: string) {
     super(
-      `La integración con Wallapop está desactivada, así que «${operation}» no puede ` +
-        'ejecutarse. Consulta docs/WALLAPOP_INTEGRATION.md y activa ' +
-        'WALLAPOP_INTEGRATION_ENABLED cuando dispongas de credenciales verificadas.',
+      `No hay credenciales de aplicación integradora de Wallapop, así que «${operation}» ` +
+        'no puede ejecutarse. Wallapop concede esas credenciales a vendedores ' +
+        'profesionales tras solicitar el alta. Consulta docs/WALLAPOP_INTEGRATION.md.',
     );
     this.name = 'IntegrationDisabledError';
   }
@@ -88,7 +88,7 @@ const limiter = new RateLimiter();
 
 export class WallapopConnectClient {
   constructor(private readonly accessToken: string) {
-    if (!getEnv().WALLAPOP_INTEGRATION_ENABLED) {
+    if (!isWallapopConfigured()) {
       throw new IntegrationDisabledError('crear el cliente de Wallapop');
     }
   }

@@ -1,12 +1,23 @@
 import Link from 'next/link';
 import { redirect } from 'next/navigation';
 import { Suspense } from 'react';
+import { logout } from '@/app/(auth)/entrar/actions';
 import { AccountFilter } from '@/components/shell/account-filter';
 import { SidebarNav } from '@/components/shell/nav';
 import { Pill } from '@/components/ui/primitives';
 import { getSession } from '@/lib/auth/session';
 import { getRepository } from '@/lib/data';
-import { getEnv } from '@/lib/config/env';
+import { isWallapopConfigured } from '@/lib/config/env';
+
+/**
+ * Nada de esta aplicación se prerenderiza.
+ *
+ * Todas las pantallas dependen de la sesión del usuario y de su base de datos,
+ * así que generarlas en tiempo de construcción no tendría sentido: obligaría a
+ * tener las credenciales de producción disponibles durante el `build`, que es
+ * justo lo que no queremos.
+ */
+export const dynamic = 'force-dynamic';
 
 /**
  * Armazón de la aplicación.
@@ -18,7 +29,6 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getSession();
   if (!session) redirect('/entrar');
 
-  const env = getEnv();
   const repo = await getRepository();
   const accounts = await repo.listAccounts(session.userId);
 
@@ -26,6 +36,8 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const needsAttention = accounts.filter(
     (a) => a.status === 'needs_attention' || a.status === 'disconnected',
   ).length;
+
+  const wallapopReady = isWallapopConfigured();
 
   return (
     <div className="flex min-h-dvh flex-col lg:flex-row">
@@ -46,24 +58,21 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Link>
 
           <SidebarNav
-            counts={{
-              '/conversaciones': pendingMessages,
-              '/cuentas': needsAttention,
-            }}
+            counts={{ '/conversaciones': pendingMessages, '/cuentas': needsAttention }}
           />
 
           <div className="mt-auto hidden lg:block">
             <div className="rounded-lg border border-line bg-surface-sunken p-3">
-              <p className="text-2xs font-semibold text-muted">Modo de datos</p>
+              <p className="text-2xs font-semibold text-muted">Conexión con Wallapop</p>
               <p className="mt-1.5">
-                <Pill tone={env.DATA_MODE === 'demo' ? 'info' : 'success'}>
-                  {env.DATA_MODE === 'demo' ? 'Demo · datos ficticios' : 'Supabase'}
+                <Pill tone={wallapopReady ? 'success' : 'warning'}>
+                  {wallapopReady ? 'Credenciales activas' : 'Pendiente de alta'}
                 </Pill>
               </p>
               <p className="mt-2 text-2xs leading-relaxed text-faint">
-                {env.WALLAPOP_INTEGRATION_ENABLED
-                  ? 'Integración con Wallapop activada.'
-                  : 'Integración con Wallapop desactivada.'}
+                {wallapopReady
+                  ? 'Ya puedes conectar cuentas y publicar.'
+                  : 'Falta el alta de aplicación integradora de Wallapop.'}
               </p>
             </div>
           </div>
@@ -78,8 +87,15 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           </Suspense>
 
           <div className="flex items-center gap-3">
-            {session.isDemo && <Pill tone="info">Sesión de demostración</Pill>}
             <span className="hidden text-xs text-muted sm:inline">{session.email}</span>
+            <form action={logout}>
+              <button
+                type="submit"
+                className="rounded-md px-2.5 py-1 text-xs text-muted transition-colors hover:bg-surface-sunken hover:text-ink"
+              >
+                Salir
+              </button>
+            </form>
           </div>
         </header>
 

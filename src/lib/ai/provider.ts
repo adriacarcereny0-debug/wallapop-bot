@@ -30,4 +30,10 @@ export interface CompletionRequest<T> {
   /** Nombre de la función de negocio, para trazas y control de coste. */
   fn: string;
   maxTokens?: number;
+  /**
+   * Profundidad de razonamiento. `low` basta para redactar y recorta el gasto;
+   * súbelo sólo donde la calidad lo justifique. Los proveedores que no lo
+   * admitan deben ignorarlo.
+   */
+  effort?: 'low' | 'medium' | 'high';
 }

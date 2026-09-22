@@ -1,4 +1,5 @@
 import { Suspense } from 'react';
+import { NewConversationForm } from '@/components/conversations/new-conversation-form';
 import { ReplyAssistant } from '@/components/conversations/reply-assistant';
 import {
   EmptyState,
@@ -63,21 +64,32 @@ async function ConversationList({ searchParams }: PageProps) {
     repo.listProducts(session.userId),
   ]);
 
+  const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? 'Cuenta';
+
+  const form = (
+    <NewConversationForm
+      accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
+      listings={listings.map((l) => ({ id: l.id, name: l.title, accountId: l.accountId }))}
+    />
+  );
+
   if (conversations.length === 0) {
     return (
-      <Surface>
-        <EmptyState
-          title="No hay conversaciones registradas"
-          description="Registra aquí las conversaciones que recibas en Wallapop para que la IA pueda analizarlas y proponerte una respuesta."
-        />
-      </Surface>
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start [&>*]:min-w-0">
+        <Surface>
+          <EmptyState
+            title="No hay conversaciones registradas"
+            description="Wallapop no permite leer el chat por programa. Copia aquí los mensajes que recibas para que la IA pueda analizarlos y proponerte una respuesta."
+          />
+        </Surface>
+        {form}
+      </div>
     );
   }
 
-  const accountName = (id: string) => accounts.find((a) => a.id === id)?.name ?? 'Cuenta';
-
   return (
-    <div className="flex flex-col gap-4">
+    <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start [&>*]:min-w-0">
+      <div className="flex flex-col gap-4">
       {conversations.map((conversation) => {
         const listing = listings.find((l) => l.id === conversation.listingId);
         const product = listing ? products.find((p) => p.id === listing.productId) : undefined;
@@ -139,6 +151,8 @@ async function ConversationList({ searchParams }: PageProps) {
           </Surface>
         );
       })}
+      </div>
+      {form}
     </div>
   );
 }

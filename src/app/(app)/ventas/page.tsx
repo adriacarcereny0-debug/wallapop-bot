@@ -7,6 +7,7 @@ import {
   Surface,
   TableSkeleton,
 } from '@/components/ui/primitives';
+import { NewSaleForm } from '@/components/sales/new-sale-form';
 import { readAccountFilter } from '@/lib/account-filter';
 import { getSession } from '@/lib/auth/session';
 import { getRepository } from '@/lib/data';
@@ -26,16 +27,20 @@ export default function SalesPage({ searchParams }: PageProps) {
         title="Ventas"
         description="Registro de tus ventas por cuenta y producto. Estos datos son tuyos: no proceden de ninguna métrica de Wallapop."
       />
-      <Surface className="overflow-hidden">
-        <Suspense fallback={<TableSkeleton rows={5} />}>
-          <SalesList searchParams={searchParams} />
-        </Suspense>
-      </Surface>
+      <Suspense
+        fallback={
+          <Surface className="overflow-hidden">
+            <TableSkeleton rows={5} />
+          </Surface>
+        }
+      >
+        <SalesContent searchParams={searchParams} />
+      </Suspense>
     </>
   );
 }
 
-async function SalesList({ searchParams }: PageProps) {
+async function SalesContent({ searchParams }: PageProps) {
   const session = await getSession();
   if (!session) return null;
 
@@ -48,12 +53,24 @@ async function SalesList({ searchParams }: PageProps) {
     repo.listProducts(session.userId),
   ]);
 
+  const form = (
+    <NewSaleForm
+      accounts={accounts.map((a) => ({ id: a.id, name: a.name }))}
+      products={products.map((p) => ({ id: p.id, name: p.name }))}
+    />
+  );
+
   if (sales.length === 0) {
     return (
-      <EmptyState
-        title="Todavía no has registrado ventas"
-        description="Registra cada venta para llevar el control de ingresos por cuenta y saber qué productos funcionan mejor."
-      />
+      <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start [&>*]:min-w-0">
+        <Surface>
+          <EmptyState
+            title="Todavía no has registrado ventas"
+            description="Registra cada venta para llevar el control de ingresos por cuenta y saber qué productos funcionan mejor."
+          />
+        </Surface>
+        {form}
+      </div>
     );
   }
 
@@ -65,7 +82,8 @@ async function SalesList({ searchParams }: PageProps) {
     .reduce((sum, s) => sum + s.priceCents, 0);
 
   return (
-    <>
+    <div className="grid gap-6 lg:grid-cols-[1.4fr_1fr] lg:items-start [&>*]:min-w-0">
+      <Surface className="overflow-hidden">
       <div className="hidden md:block">
         <Table>
           <THead>
@@ -129,6 +147,8 @@ async function SalesList({ searchParams }: PageProps) {
           );
         })}
       </ul>
-    </>
+      </Surface>
+      {form}
+    </div>
   );
 }

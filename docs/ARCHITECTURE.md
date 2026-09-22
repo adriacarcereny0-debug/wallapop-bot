@@ -10,7 +10,7 @@ los requisitos».
 | Framework | **Next.js 15 (App Router)** | Front y back en un despliegue. Server Components evitan montar una API sólo para leer datos. Se despliega en Vercel sin configuración |
 | Lenguaje | **TypeScript estricto** | Con `noUncheckedIndexedAccess`. El dominio es multicuenta: confundir un `accountId` debe fallar al compilar |
 | Estilos | **Tailwind CSS v4** | Tokens en CSS nativo (`@theme`), sin fichero de configuración JS. Cero CSS en tiempo de ejecución |
-| Base de datos | **PostgreSQL vía Supabase** | Postgres real con RLS, auth y almacenamiento incluidos. Plan gratuito suficiente para empezar |
+| Base de datos | **PostgreSQL vía Supabase** | Postgres real con RLS, auth y almacenamiento en un solo servicio. Plan gratuito suficiente para empezar |
 | Validación | **Zod** | El mismo esquema valida la entrada HTTP y da el tipo TypeScript |
 | IA | **Capa propia sobre SDK** | La aplicación nunca llama a un SDK directamente |
 | Tests | **Vitest** | Rápido, sin configuración, mismo resolutor que Vite |
@@ -65,12 +65,16 @@ cuenta se establece al crear el anuncio.
 
 ### Tres barreras de aislamiento
 
-1. **Base de datos.** RLS en todas las tablas: `auth.uid() = user_id`.
+1. **Base de datos.** RLS en las 13 tablas: `auth.uid() = user_id`.
 2. **Repositorio.** Cada método recibe `userId` como primer argumento y filtra
    por él, aunque RLS ya lo haga. Si una política se rompe, el filtro sigue.
 3. **Interfaz.** El filtro de cuenta se valida contra las cuentas reales del
    usuario (`readAccountFilter`). Un `?cuenta=` manipulado cae a «todas», no da
    acceso a datos ajenos. Hay test para ello.
+
+**Verificado contra PostgreSQL real**, no sólo sobre el papel: con dos usuarios
+distintos se comprobó que ninguno puede leer, insertar suplantando, modificar ni
+borrar datos del otro, y que sin sesión no se ve absolutamente nada.
 
 El filtro vive en la URL, no en el estado del cliente: cualquier vista se puede
 compartir y recargar sin perder contexto.
@@ -110,8 +114,10 @@ Tres piezas:
 - `oauth.ts` / `crypto.ts` / `webhooks.ts` — PKCE, cifrado de tokens y
   verificación HMAC.
 
-Todo queda inerte mientras `WALLAPOP_INTEGRATION_ENABLED=false`: el constructor
-del cliente lanza antes de tocar la red.
+Todo queda inerte mientras no haya credenciales de integrador: el constructor
+del cliente lanza antes de tocar la red. No hay interruptor manual, porque un
+interruptor puede quedarse encendido sin credenciales y fallar a mitad de una
+operación. O están las tres credenciales o la integración no existe.
 
 ---
 

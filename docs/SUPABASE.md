@@ -1,4 +1,7 @@
-# Supabase: puesta en marcha
+# Supabase: detalle técnico
+
+> Para la puesta en marcha paso a paso, ve a
+> [`PUESTA_EN_MARCHA.md`](PUESTA_EN_MARCHA.md). Este documento entra en detalle.
 
 ## 1. Crear el proyecto
 
@@ -52,27 +55,29 @@ que tiene 2.
 
 ## 4. Configurar la autenticación
 
-En **Authentication → Providers**, deja activado *Email*. Si no quieres registro
-abierto, desactiva *Enable email signups* y crea los usuarios a mano desde
-**Authentication → Users**. Para una herramienta privada, es lo razonable.
+En **Authentication → Providers**, deja activado *Email*.
+
+**Desactiva *Enable email signups***: esta aplicación no tiene registro abierto
+a propósito, es una herramienta privada. Los usuarios se crean a mano desde
+**Authentication → Users → Add user**, marcando *Auto Confirm User*.
+
+El perfil interno de la tabla `public.users` se crea solo mediante un
+disparador sobre `auth.users`. Verificado.
 
 En **Authentication → URL Configuration**, añade tu dominio a las *Redirect URLs*.
 
 ## 5. Almacenamiento de imágenes
 
-En **Storage**, crea un bucket `product-images`.
+**Ya lo crea la migración**: el bucket `product-images` y sus cuatro políticas
+se dan de alta al ejecutar `0001_init.sql`. No hay que hacer nada a mano.
 
-Para que cada usuario sólo vea sus imágenes, guarda los ficheros bajo
-`<user_id>/<product_id>/<fichero>` y aplica esta política:
+El bucket es **público en lectura** a propósito: al publicar un anuncio,
+`POST /items` de Wallapop recibe una URL y es Wallapop quien descarga la imagen.
+Si el fichero exigiera autenticación, la publicación fallaría. Las rutas llevan
+un UUID aleatorio, así que no son adivinables.
 
-```sql
-create policy "imagenes_propias"
-on storage.objects for all
-using (
-  bucket_id = 'product-images'
-  and (storage.foldername(name))[1] = auth.uid()::text
-);
-```
+La **escritura** sí está restringida: cada usuario sólo puede escribir dentro de
+su carpeta `<user_id>/…`, que es lo que comprueba la política.
 
 ## 6. Conectar la aplicación
 

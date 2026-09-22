@@ -36,8 +36,7 @@ create table public.accounts (
   user_id       uuid not null references public.users(id) on delete cascade,
   name          text not null,
   slug          text not null,
-  status        account_status not null default 'demo',
-  is_demo       boolean not null default true,
+  status        account_status not null default 'disconnected',
   last_synced_at timestamptz,
   attention_reason text,
 
@@ -294,3 +293,47 @@ end $$;
 create trigger products_touch      before update on public.products      for each row execute function public.touch_updated_at();
 create trigger listings_touch      before update on public.listings      for each row execute function public.touch_updated_at();
 create trigger conversations_touch before update on public.conversations for each row execute function public.touch_updated_at();
+
+-- ============================================================================
+-- ALMACENAMIENTO DE IMÁGENES
+--
+-- Las fotos viven en Supabase Storage, nunca en la base de datos: en las tablas
+-- sólo se guarda la URL.
+--
+-- El bucket es PÚBLICO EN LECTURA a propósito. Al publicar un anuncio,
+-- `POST /items` de Wallapop recibe una URL de imagen y es Wallapop quien la
+-- descarga: si el fichero exigiera autenticación, la publicación fallaría. Las
+-- rutas llevan un UUID aleatorio, así que no son adivinables.
+--
+-- La escritura sí está restringida: cada usuario sólo puede escribir dentro de
+-- su propia carpeta, que es el primer segmento de la ruta (`<user_id>/...`).
+-- ============================================================================
+
+insert into storage.buckets (id, name, public)
+values ('product-images', 'product-images', true)
+on conflict (id) do nothing;
+
+create policy "product_images_read"
+  on storage.objects for select
+  using (bucket_id = 'product-images');
+
+create policy "product_images_insert"
+  on storage.objects for insert
+  with check (
+    bucket_id = 'product-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "product_images_update"
+  on storage.objects for update
+  using (
+    bucket_id = 'product-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );
+
+create policy "product_images_delete"
+  on storage.objects for delete
+  using (
+    bucket_id = 'product-images'
+    and (storage.foldername(name))[1] = auth.uid()::text
+  );

@@ -75,7 +75,12 @@ async function ProductList() {
             {products.map((product) => (
               <TR key={product.id}>
                 <TD>
-                  <p className="font-medium">{product.name}</p>
+                  <Link
+                    href={`/productos/${product.id}`}
+                    className="font-medium hover:text-accent"
+                  >
+                    {product.name}
+                  </Link>
                   <p className="mt-0.5 font-mono text-2xs text-faint">{product.sku}</p>
                 </TD>
                 <TD>
@@ -100,7 +105,9 @@ async function ProductList() {
       <ul className="divide-y divide-line md:hidden">
         {products.map((product) => (
           <li key={product.id} className="px-4 py-3.5">
-            <p className="font-medium">{product.name}</p>
+            <Link href={`/productos/${product.id}`} className="font-medium">
+              {product.name}
+            </Link>
             <p className="mt-0.5 font-mono text-2xs text-faint">{product.sku}</p>
             <div className="tnum mt-2 flex flex-wrap gap-x-4 gap-y-1 text-xs text-muted">
               <span>{product.category}</span>
