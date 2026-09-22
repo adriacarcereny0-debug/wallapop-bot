@@ -86,12 +86,34 @@ const serverSchema = z
 
 export type ServerEnv = z.infer<typeof serverSchema>;
 
+/**
+ * Normaliza el entorno antes de validarlo.
+ *
+ * Motivo: los paneles de alojamiento (Vercel entre ellos) guardan una variable
+ * "sin valor" como **cadena vacía**, no como ausente. Zod sólo aplica
+ * `.default()` cuando el valor es `undefined`, así que una variable creada pero
+ * vacía hacía fallar el arranque en lugar de caer al valor por defecto.
+ *
+ * Para este esquema, vacío y ausente significan lo mismo: no configurado.
+ */
+export function normalizeEnv(
+  source: Record<string, string | undefined>,
+): Record<string, string | undefined> {
+  const normalized: Record<string, string | undefined> = {};
+
+  for (const [key, value] of Object.entries(source)) {
+    normalized[key] = value?.trim() === '' ? undefined : value;
+  }
+
+  return normalized;
+}
+
 let cached: ServerEnv | null = null;
 
 export function getEnv(): ServerEnv {
   if (cached) return cached;
 
-  const parsed = serverSchema.safeParse(process.env);
+  const parsed = serverSchema.safeParse(normalizeEnv(process.env));
   if (!parsed.success) {
     const detail = parsed.error.issues
       .map((i) => `  · ${i.path.join('.') || '(raíz)'}: ${i.message}`)
